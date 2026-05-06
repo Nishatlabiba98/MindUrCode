@@ -1,4 +1,4 @@
-package MindUrCode.Repository;
+package MindUrCode.repository;
 
 // =====================================================================
 // MethodRepo.java  –  JPA Repository for the Method entity
@@ -27,15 +27,13 @@ package MindUrCode.Repository;
 //
 // =====================================================================
 
-import com.minduryourcode.entity.Method;
+import MindUrCode.model.Method;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import MindUrCode.entity.Method;
 
 @Repository
 public interface MethodRepo extends JpaRepository<Method, UUID> {
