@@ -1,0 +1,93 @@
+package com.minduryourcode.repository;
+
+// =====================================================================
+// ToolResultRepo.java  –  JPA Repository for the ToolResult entity
+// =====================================================================
+//
+// QUICK RECAP — what ToolResult represents:
+//   Every time an AI tool (Clarity, Refactoring, etc.) analyzes a
+//   method, the AI's suggestion is saved as a ToolResult row.
+//   Each row tracks:
+//     • which method was analyzed  (methodId)
+//     • which analysis run it came from  (analysisRunId)
+//     • which tool produced it  (toolType: enum ToolType)
+//     • the AI's suggestion text  (aiSuggestion)
+//     • whether the dev approved/rejected it  (status: enum ResultStatus)
+//
+// WHY TWO CUSTOM QUERIES?
+//   1.  findByMethodId  → "show me all suggestions for this method"
+//   2.  findByStatus    → "show me all results still waiting for review"
+//
+// =====================================================================
+
+import com.minduryourcode.entity.ToolResult;
+import com.minduryourcode.enums.ResultStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
+
+// @Repository  — same as MethodRepo: marks this as a Spring-managed
+// data-access component. Spring generates the SQL at startup.
+@Repository
+public interface ToolResultRepo extends JpaRepository<ToolResult, UUID> {
+
+    // -----------------------------------------------------------------
+    // findByMethodId
+    // -----------------------------------------------------------------
+    // PURPOSE:
+    //   Retrieve every AI suggestion that was ever generated for one
+    //   specific method. A single method may have results from several
+    //   different tools across several different analysis runs.
+    //
+    // WHEN IS THIS USED?
+    //   • When the UI opens the detail view for a single method and
+    //     wants to show all feedback side-by-side.
+    //   • When an AnalysisController needs to display a method's history.
+    //
+    // GENERATED SQL (approximately):
+    //   SELECT * FROM tool_result WHERE method_id = ?
+    //
+    // RETURN TYPE — List<ToolResult>:
+    //   Could be empty (method has never been analyzed).
+    //   Could have many entries (analyzed multiple times by multiple tools).
+    //
+    // EXAMPLE USAGE:
+    //   List<ToolResult> results = toolResultRepo.findByMethodId(methodId);
+    //   for (ToolResult r : results) {
+    //       System.out.println(r.getToolType() + ": " + r.getAiSuggestion());
+    //   }
+    // -----------------------------------------------------------------
+    List<ToolResult> findByMethodId(UUID methodId);
+
+    // -----------------------------------------------------------------
+    // findByStatus
+    // -----------------------------------------------------------------
+    // PURPOSE:
+    //   Retrieve every result that currently has a given status.
+    //   The status comes from the ResultStatus enum (defined by James):
+    //     PENDING   – AI made a suggestion; developer hasn't decided yet
+    //     APPROVED  – developer said "yes, apply this"
+    //     REJECTED  – developer said "no thanks"
+    //
+    // WHEN IS THIS USED?
+    //   • Dashboard view: "You have 7 suggestions waiting for your review"
+    //   • Batch-approval screen: list all PENDING results at once.
+    //   • Metrics: count how many suggestions were APPROVED vs REJECTED.
+    //
+    // PARAMETER TYPE — ResultStatus (an enum):
+    //   Enums are passed in directly. Spring/JPA maps them to the
+    //   string name stored in the database (e.g., "PENDING").
+    //
+    // GENERATED SQL (approximately):
+    //   SELECT * FROM tool_result WHERE status = ?
+    //
+    // EXAMPLE USAGE:
+    //   List<ToolResult> pending = toolResultRepo.findByStatus(ResultStatus.PENDING);
+    //   System.out.println("Awaiting review: " + pending.size());
+    //
+    //   List<ToolResult> approved = toolResultRepo.findByStatus(ResultStatus.APPROVED);
+    // -----------------------------------------------------------------
+    List<ToolResult> findByStatus(ResultStatus status);
+}
