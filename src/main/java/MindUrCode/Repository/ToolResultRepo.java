@@ -1,4 +1,4 @@
-package com.minduryourcode.repository;
+package MindUrCode.Repository;
 
 // =====================================================================
 // ToolResultRepo.java  –  JPA Repository for the ToolResult entity
@@ -20,8 +20,7 @@ package com.minduryourcode.repository;
 //
 // =====================================================================
 
-import com.minduryourcode.entity.ToolResult;
-import com.minduryourcode.enums.ResultStatus;
+import MindUrCode.enums.ResultStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
