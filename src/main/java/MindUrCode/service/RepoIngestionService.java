@@ -38,10 +38,11 @@ public class RepoIngestionService {
         this.methodRepo = methodRepo;
     }
 
-    public AnalysisRun ingestRepository(String sourcePath, String name) {
+    public AnalysisRun ingestRepository(String sourcePath, String name, UUID userId) {
 
         Repository repo = new Repository();
         repo.setName(name);
+        repo.setUserId(userId);
         repo.setSourcePath(sourcePath);
         repo.setSourceType(sourcePath.startsWith("http") ? "GIT_URL" : "LOCAL_PATH");
         repo.setAddedAt(LocalDateTime.now());

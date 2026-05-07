@@ -91,7 +91,7 @@ public class DocumentationService {
     //   List<ToolResult> — every suggestion created during this run,
     //                      returned to the controller and sent to React.
     // =================================================================
-    public List<ToolResult> analyzeDocumentation(List<SourceFile> sourceFiles) {
+    public List<ToolResult> analyzeDocumentation(List<SourceFile> sourceFiles, UUID analysisRunId) {
 
         List<ToolResult> allResults = new ArrayList<>();
 
@@ -134,7 +134,7 @@ public class DocumentationService {
                 String signature = extractSignature(rawCode);
 
                 // Call the UML-specified public method to generate the Javadoc.
-                ToolResult result = generateJavadoc(signature, rawCode, method);
+                ToolResult result = generateJavadoc(signature, rawCode, method, analysisRunId);
                 allResults.add(result);
             }
         }
@@ -172,14 +172,12 @@ public class DocumentationService {
     // RETURN TYPE:
     //   ToolResult — the saved suggestion row (status = PENDING)
     // =================================================================
-    public ToolResult generateJavadoc(String sig, String body, Method method) {
+    public ToolResult generateJavadoc(String sig, String body, Method method, UUID analysisRunId) {
 
-        // Build the AI prompt and send it.
         String prompt       = buildPrompt(sig, body);
         String aiSuggestion = ollamaService.analyze(prompt);
 
-        // Package the AI's suggestion into a ToolResult and save it.
-        return saveResult(method, aiSuggestion);
+        return saveResult(method, aiSuggestion, analysisRunId);
     }
 
     // =================================================================
@@ -252,10 +250,11 @@ public class DocumentationService {
     //   ResultStatus.PENDING    — dev must approve before anything changes
     //   UUID.randomUUID()       — generates a unique ID for this row
     // =================================================================
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());
+        result.setAnalysisRunId(analysisRunId);
         result.setToolType(ToolType.DOCUMENTATION);
         result.setAiSuggestion(aiSuggestion);
         result.setStatus(ResultStatus.PENDING);

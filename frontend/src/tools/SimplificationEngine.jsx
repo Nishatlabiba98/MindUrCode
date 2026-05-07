@@ -9,6 +9,7 @@ import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
 import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
+import RepoSelector from '../components/RepoSelector';
 
 export default function SimplificationEngine() {
   const [language, setLanguage] = useState('java');
@@ -49,15 +50,7 @@ export default function SimplificationEngine() {
         url={`minduurcode.app/simplify/${sample.file}`}
         language={language} setLanguage={setLanguage} languages={LANGUAGES}
         actions={[{ label: loading ? 'Analyzing…' : 'Analyze', primary: true, onClick: handleRun }]}
-        extras={
-          <input
-            placeholder="Repo ID"
-            value={repoId}
-            onChange={e => setRepoId(e.target.value)}
-            style={{ fontSize: 12, padding: '2px 6px', marginRight: 8, borderRadius: 4,
-              border: `1px solid ${C.border}`, background: C.bg, color: C.text, width: 280 }}
-          />
-        }
+        extras={<RepoSelector repoId={repoId} setRepoId={setRepoId} />}
       />
       {error && <div style={{ padding: '4px 12px', fontSize: 12, color: 'red' }}>{error}</div>}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>

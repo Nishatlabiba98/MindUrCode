@@ -31,14 +31,13 @@ public class ClarityService {
     }
 
     // Entry point called by AnalysisController
-    public List<ToolResult> analyzeClarity(List<SourceFile> sourceFiles) {
+    public List<ToolResult> analyzeClarity(List<SourceFile> sourceFiles, UUID analysisRunId) {
         List<ToolResult> allResults = new ArrayList<>();
 
         for (SourceFile file : sourceFiles) {
             List<Method> methods = methodRepo.findBySourceFileId(file.getId());
 
             for (Method method : methods) {
-                // Skip if already analyzed for CLARITY
                 boolean alreadyAnalyzed = toolResultRepo
                         .findByMethodId(method.getId())
                         .stream()
@@ -46,7 +45,7 @@ public class ClarityService {
 
                 if (alreadyAnalyzed) continue;
 
-                ToolResult result = analyzeMethod(method);
+                ToolResult result = analyzeMethod(method, analysisRunId);
                 allResults.add(result);
             }
         }
@@ -54,11 +53,10 @@ public class ClarityService {
         return allResults;
     }
 
-    // Analyzes a single method for naming clarity
-    public ToolResult analyzeMethod(Method method) {
+    public ToolResult analyzeMethod(Method method, UUID analysisRunId) {
         String prompt      = buildPrompt(method.getMethodName(), method.getRawCode());
         String suggestion  = ollamaService.analyze(prompt);
-        return saveResult(method, suggestion);
+        return saveResult(method, suggestion, analysisRunId);
     }
 
     private String buildPrompt(String methodName, String methodBody) {
@@ -77,10 +75,11 @@ public class ClarityService {
                 """.formatted(methodName, methodBody);
     }
 
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());
+        result.setAnalysisRunId(analysisRunId);
         result.setToolType(ToolType.CLARITY);
         result.setAiSuggestion(aiSuggestion);
         result.setStatus(ResultStatus.PENDING);

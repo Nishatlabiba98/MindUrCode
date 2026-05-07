@@ -5,6 +5,7 @@ import CoverageAnalyzer from './tools/CoverageAnalyzer';
 import ClarityScanner from './tools/ClarityScanner';
 import DocumentationAssistant from './tools/DocumentationAssistant';
 import RefactoringAdvisor from './tools/RefactoringAdvisor';
+import RepoSubmitPage from './pages/RepoSubmitPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/clarity" element={<ClarityScanner />} />
         <Route path="/docs" element={<DocumentationAssistant />} />
         <Route path="/refactor" element={<RefactoringAdvisor />} />
+        <Route path="/repos" element={<RepoSubmitPage />} />
       </Routes>
     </BrowserRouter>
   );
