@@ -8,22 +8,39 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
+import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
 
 export default function SimplificationEngine() {
   const [language, setLanguage] = useState('java');
+  const [repoId, setRepoId] = useState('');
+  const [findings, setFindings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const sample = SAMPLES[language];
 
-  // TODO: wire these to your backend
-  const findings = [
-    { sev: 'orange', tag: 'Nested conditionals', tagColor: 'orange',
-      title: 'Three nested if-statements can be combined',
-      desc: 'Lines 5–7 check non-null, isActive(), and email. Combine with && operators.',
-      loc: `${sample.file}:5–11`, actions: ['Apply', 'Preview'] },
-    { sev: 'blue', tag: 'For-loop → Stream', tagColor: 'blue',
-      title: 'Use Stream API for filter/map/collect',
-      desc: 'Index-based for-loop can be replaced with users.stream().filter(...).map(...).collect().',
-      loc: `${sample.file}:3–12`, actions: ['Apply', 'Preview'] },
-  ];
+  async function handleRun() {
+    if (!repoId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const results = await runAnalysis(repoId, 'SIMPLIFICATION');
+      setFindings(results.map(mapToFinding));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAction(action, finding) {
+    if (action === 'Approve') {
+      const updated = await approveResult(finding.id);
+      setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    } else if (action === 'Reject') {
+      const updated = await rejectResult(finding.id);
+      setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    }
+  }
 
   return (
     <AppShell tab="MindUrCode — Simplification" url="minduurcode.app/simplify">
@@ -31,8 +48,18 @@ export default function SimplificationEngine() {
       <ToolStrip
         url={`minduurcode.app/simplify/${sample.file}`}
         language={language} setLanguage={setLanguage} languages={LANGUAGES}
-        actions={[{ label: 'Analyze' }, { label: 'Apply All', primary: true }]}
+        actions={[{ label: loading ? 'Analyzing…' : 'Analyze', primary: true, onClick: handleRun }]}
+        extras={
+          <input
+            placeholder="Repo ID"
+            value={repoId}
+            onChange={e => setRepoId(e.target.value)}
+            style={{ fontSize: 12, padding: '2px 6px', marginRight: 8, borderRadius: 4,
+              border: `1px solid ${C.border}`, background: C.bg, color: C.text, width: 280 }}
+          />
+        }
       />
+      {error && <div style={{ padding: '4px 12px', fontSize: 12, color: 'red' }}>{error}</div>}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <Sidebar activeIdx={0} />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
@@ -50,6 +77,7 @@ export default function SimplificationEngine() {
       <FindingsPanel
         tabs={[{ label: 'Suggestions', count: findings.length }, { label: 'Applied', count: 0 }, { label: 'History' }]}
         findings={findings}
+        onAction={handleAction}
       />
       <StatusBar language={sample.label} file={sample.file} lineCount={sample.lineCount} />
     </AppShell>

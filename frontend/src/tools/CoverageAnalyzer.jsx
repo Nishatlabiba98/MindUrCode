@@ -8,27 +8,44 @@ import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
 import { C } from '../theme';
+import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
 
 export default function CoverageAnalyzer() {
   const [language, setLanguage] = useState('java');
+  const [repoId, setRepoId] = useState('');
+  const [findings, setFindings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const sample = SAMPLES[language];
 
-  // TODO: replace with real coverage data from JaCoCo / Coverage.py / Istanbul
   const lineMeta = sample.original.map((_, i) => {
     const covered = i % 5 !== 3;
     return { gutterStripe: covered ? C.covGreen : C.covRed };
   });
 
-  const findings = [
-    { sev: 'red', tag: 'Uncovered branch', tagColor: 'red',
-      title: 'Inner null-check branch never executed in tests',
-      desc: 'Line 7 — no test exercises the case where u.getEmail() is null.',
-      loc: `${sample.file}:7`, actions: ['Generate test'] },
-    { sev: 'yellow', tag: 'Partial branch', tagColor: 'orange',
-      title: 'Loop body partially covered',
-      desc: '8 of 12 statements in the loop have test coverage.',
-      loc: `${sample.file}:3–12`, actions: ['View report'] },
-  ];
+  async function handleRun() {
+    if (!repoId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const results = await runAnalysis(repoId, 'COVERAGE');
+      setFindings(results.map(mapToFinding));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAction(action, finding) {
+    if (action === 'Approve') {
+      const updated = await approveResult(finding.id);
+      setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    } else if (action === 'Reject') {
+      const updated = await rejectResult(finding.id);
+      setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    }
+  }
 
   return (
     <AppShell tab="MindUrCode — Coverage" url="minduurcode.app/coverage">
@@ -36,13 +53,18 @@ export default function CoverageAnalyzer() {
       <ToolStrip
         url={`minduurcode.app/coverage/${sample.file}`}
         language={language} setLanguage={setLanguage} languages={LANGUAGES}
-        actions={[{ label: 'Run tests' }, { label: 'Refresh', primary: true }]}
+        actions={[{ label: loading ? 'Running…' : 'Run Coverage', primary: true, onClick: handleRun }]}
         extras={
-          <span style={{ fontSize: 12, color: C.textDim, marginRight: 8 }}>
-            Coverage: <strong style={{ color: C.text }}>78%</strong>
-          </span>
+          <input
+            placeholder="Repo ID"
+            value={repoId}
+            onChange={e => setRepoId(e.target.value)}
+            style={{ fontSize: 12, padding: '2px 6px', marginRight: 8, borderRadius: 4,
+              border: `1px solid ${C.border}`, background: C.bg, color: C.text, width: 280 }}
+          />
         }
       />
+      {error && <div style={{ padding: '4px 12px', fontSize: 12, color: 'red' }}>{error}</div>}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <Sidebar activeIdx={1} />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
@@ -56,6 +78,7 @@ export default function CoverageAnalyzer() {
       <FindingsPanel
         tabs={[{ label: 'Gaps', count: findings.length }, { label: 'Files' }, { label: 'Report' }]}
         findings={findings}
+        onAction={handleAction}
       />
       <StatusBar language={sample.label} file={sample.file} lineCount={sample.lineCount} />
     </AppShell>
