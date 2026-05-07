@@ -25,6 +25,9 @@ public class ToolResult {
     @Column(name = "method_id", nullable = false)
     private UUID methodId;
 
+    @Column(name = "analysis_run_id")
+    private UUID analysisRunId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "tool_type", nullable = false)
     private ToolType toolType;

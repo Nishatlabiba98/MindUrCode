@@ -1,0 +1,44 @@
+import React from 'react';
+import { C } from '../theme';
+
+const ICONS = [
+  <svg key="0" width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+    <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+    <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+    <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+  </svg>,
+  <svg key="1" width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M3 4h10M3 8h7M3 12h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>,
+  <svg key="2" width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <circle cx="7" cy="7" r="4" stroke="currentColor" strokeWidth="1.4"/>
+    <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>,
+  <svg key="3" width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>,
+  <svg key="4" width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M3 8h9M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>,
+];
+
+export default function Sidebar({ activeIdx = 0 }) {
+  return (
+    <div style={{
+      width: 56, borderRight: `1px solid ${C.border}`,
+      padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 4,
+      background: C.panelAlt,
+    }}>
+      {ICONS.map((ic, i) => (
+        <div key={i} style={{
+          width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 8,
+          background: i === activeIdx ? 'oklch(94% 0.01 260)' : 'transparent',
+          color: i === activeIdx ? C.text : C.textMute,
+          cursor: 'default',
+        }}>{ic}</div>
+      ))}
+    </div>
+  );
+}
