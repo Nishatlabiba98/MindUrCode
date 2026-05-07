@@ -86,7 +86,7 @@ public class RepoIngestionService {
             run.setCompletedAt(LocalDateTime.now());
             analysisRunRepo.save(run);
 
-        } catch (IOException | org.eclipse.jgit.api.errors.GitAPIException | Exception e) {
+        } catch (Exception e) {
             run.setStatus("FAILED");
             analysisRunRepo.save(run);
         }
