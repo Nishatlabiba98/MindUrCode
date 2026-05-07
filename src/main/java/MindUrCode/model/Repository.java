@@ -55,7 +55,7 @@ public UUID getId() {
     return id;
 }
 
-public void getId(UUID id) {
+public void setId(UUID id) {
     this.id = id;
 }
 
@@ -94,7 +94,4 @@ public LocalDateTime getAddedAt() {
 public void setAddedAt(LocalDateTime addedAt) {
     this.addedAt = addedAt;
 }
-
-
-
 }
