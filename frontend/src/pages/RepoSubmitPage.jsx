@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { submitRepo } from '../api';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
+import Sidebar from '../components/Sidebar';
 import { C, btnStyle } from '../theme';
 
 export default function RepoSubmitPage() {
@@ -37,7 +38,9 @@ export default function RepoSubmitPage() {
   return (
     <AppShell>
       <MenuBar />
-      <div style={{ padding: 32, maxWidth: 480 }}>
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        <Sidebar activeIdx={5} />
+        <div style={{ padding: 32, maxWidth: 480 }}>
         <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600 }}>Submit Repository</h2>
         <label style={{ fontSize: 12, color: C.textDim, display: 'block', marginBottom: 4 }}>Repo Name</label>
         <input placeholder="e.g. MyProject" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
@@ -55,6 +58,7 @@ export default function RepoSubmitPage() {
             <div style={{ fontFamily: 'monospace', marginTop: 6, wordBreak: 'break-all' }}>{result.repository?.id ?? 'check backend'}</div>
           </div>
         )}
+      </div>
       </div>
     </AppShell>
   );
