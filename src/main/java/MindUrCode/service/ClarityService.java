@@ -30,57 +30,46 @@ public class ClarityService {
         this.toolResultRepo = toolResultRepo;
     }
 
-    // Entry point called by AnalysisController
-    public List<ToolResult> analyzeClarity(List<SourceFile> sourceFiles) {
+    public List<ToolResult> analyzeClarity(List<SourceFile> sourceFiles, UUID analysisRunId) {
         List<ToolResult> allResults = new ArrayList<>();
-
         for (SourceFile file : sourceFiles) {
             List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-
             for (Method method : methods) {
-                // Skip if already analyzed for CLARITY
                 boolean alreadyAnalyzed = toolResultRepo
                         .findByMethodId(method.getId())
                         .stream()
                         .anyMatch(r -> r.getToolType() == ToolType.CLARITY);
-
                 if (alreadyAnalyzed) continue;
-
-                ToolResult result = analyzeMethod(method);
+                ToolResult result = analyzeMethod(method, analysisRunId);
                 allResults.add(result);
             }
         }
-
         return allResults;
     }
 
-    // Analyzes a single method for naming clarity
-    public ToolResult analyzeMethod(Method method) {
-        String prompt      = buildPrompt(method.getMethodName(), method.getRawCode());
-        String suggestion  = ollamaService.analyze(prompt);
-        return saveResult(method, suggestion);
+    public ToolResult analyzeMethod(Method method, UUID analysisRunId) {
+        String prompt     = buildPrompt(method.getMethodName(), method.getRawCode());
+        String suggestion = ollamaService.analyze(prompt);
+        return saveResult(method, suggestion, analysisRunId);
     }
 
     private String buildPrompt(String methodName, String methodBody) {
         return """
                 You are a Java code clarity expert.
-
                 Analyze this method:
-
                 Method name: %s
-
                 Method body:
                 %s
-
                 Does the method name clearly describe what the code does?
                 Respond with: CLEAR or UNCLEAR, then one sentence explaining why.
                 """.formatted(methodName, methodBody);
     }
 
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());
+        result.setAnalysisRunId(analysisRunId);
         result.setToolType(ToolType.CLARITY);
         result.setAiSuggestion(aiSuggestion);
         result.setStatus(ResultStatus.PENDING);
