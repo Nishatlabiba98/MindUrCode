@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "repositories")
-public class repository {
+public class Repository {
 
 @Id
 @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,13 +35,13 @@ private LocalDateTime addedAt;
 
 
 
-public repository() {
+public Repository() {
 
 }
 
 
 
-public repository(UUID userId, String name, String sourceType, String sourcePath) {
+public Repository(UUID userId, String name, String sourceType, String sourcePath) {
     this.userId = userId;
     this.name = name;
     this.sourceType = sourceType;

@@ -30,7 +30,7 @@ public class AnalysisRun {
 
     @ManyToOne
     @JoinColumn(name = "repository_id", nullable = false)
-    private repository repository;
+    private Repository repository;
 
     @Column(nullable = false)
     private String status;
