@@ -32,7 +32,6 @@ public class TestCoverageService {
         this.toolResultRepo = toolResultRepo;
     }
 
-    // Main entry point — finds untested methods in each file and asks AI for suggestions
     public List<ToolResult> analyzeCoverage(List<SourceFile> sourceFiles) {
         List<ToolResult> allResults = new ArrayList<>();
 
@@ -51,21 +50,17 @@ public class TestCoverageService {
         return allResults;
     }
 
-    // Filters methods down to those lacking test coverage
     public List<Method> findUntested(List<Method> methods) {
         List<Method> untested = new ArrayList<>();
 
         for (Method method : methods) {
-            // Skip methods that are themselves tests
             if (method.getMethodName().toLowerCase().startsWith("test")) {
                 continue;
             }
-            // Skip methods inside test classes
             String rawCode = method.getRawCode();
             if (rawCode != null && rawCode.contains("@Test")) {
                 continue;
             }
-            // Skip methods already analyzed for coverage
             boolean alreadyAnalyzed = toolResultRepo
                     .findByMethodId(method.getId())
                     .stream()
@@ -80,7 +75,6 @@ public class TestCoverageService {
         return untested;
     }
 
-    // Builds the prompt sent to the AI model
     private String buildPrompt(Method method) {
         return String.format(
                 "You are a Java testing expert reviewing code for the MindUrCode project.\n\n" +
@@ -101,7 +95,6 @@ public class TestCoverageService {
         );
     }
 
-    // Saves the AI's suggestion as a ToolResult in the database
     private ToolResult saveResult(Method method, String aiSuggestion) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());

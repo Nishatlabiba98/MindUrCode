@@ -11,9 +11,7 @@ import java.util.UUID;
 @Repository
 public interface ToolResultRepo extends JpaRepository<ToolResult, UUID> {
 
-    // Get all AI suggestions ever generated for a specific method
     List<ToolResult> findByMethodId(UUID methodId);
 
-    // Get all results with a given status (PENDING, APPROVED, REJECTED)
     List<ToolResult> findByStatus(ResultStatus status);
 }
