@@ -1,0 +1,94 @@
+package MindUrCode.service;
+import MindUrCode.model.AnalysisRun;
+
+import MindUrCode.model.Repository;
+import MindUrCode.model.SourceFile;
+import MindUrCode.repository.AnalysisRunRepo;
+import MindUrCode.repository.SourceFileRepo;
+import MindUrCode.repository.RepositoryRepo;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class RepoIngestionService {
+
+    private final SourceFileRepo sourceFileRepo;
+    private final AnalysisRunRepo analysisRunRepo;
+    private final RepositoryRepo repositoryRepo;
+
+    public RepoIngestionService(SourceFileRepo sourceFileRepo,AnalysisRunRepo analysisRunRepo,RepositoryRepo repositoryRepo) {
+        this.sourceFileRepo = sourceFileRepo;
+        this.analysisRunRepo = analysisRunRepo;
+        this.repositoryRepo = repositoryRepo;
+    }
+
+    // ── MAIN METHOD ───────────────────────────────
+    // Takes a path or URL, saves it, walks the files
+    public AnalysisRun ingestRepository(String sourcePath, String name) {
+
+        // 1. Save the repository record
+        Repository repo = new Repository();
+        repo.setName(name);
+        repo.setSourcePath(sourcePath);
+        repo.setSourceType(sourcePath.startsWith("http") ? "GIT_URL" : "LOCAL_PATH");
+        repo.setAddedAt(LocalDateTime.now());
+        repositoryRepo.save(repo);
+
+        // 2. Create an analysis run
+        AnalysisRun run = new AnalysisRun();
+        run.setRepository(repo);
+        run.setStatus("RUNNING");
+        run.setStartedAt(LocalDateTime.now());
+        analysisRunRepo.save(run);
+
+        // 3. Walk the Java files and save each one
+        try {
+            Path rootPath = Paths.get(sourcePath);
+            List<SourceFile> files = walkJavaFiles(rootPath, repo);
+            sourceFileRepo.saveAll(files);
+
+            // 4. Mark as complete
+            run.setStatus("COMPLETED");
+            run.setCompletedAt(LocalDateTime.now());
+            analysisRunRepo.save(run);
+
+        } catch (IOException e) {
+            run.setStatus("FAILED");
+            analysisRunRepo.save(run);
+        }
+
+        return run;
+    }
+
+    // ── WALK FILES ────────────────────────────────
+    // Goes through every .java file in the folder
+    private List<SourceFile> walkJavaFiles(Path root, 
+                                            Repository repo) throws IOException {
+        List<SourceFile> sourceFiles = new ArrayList<>();
+
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file,
+                                              BasicFileAttributes attrs) {
+                if (file.toString().endsWith(".java")) {
+                    SourceFile sf = new SourceFile();
+                    sf.setFilePath(file.toString());
+                    sf.setFileType("JAVA");
+                    sf.setRepository(repo);
+                    sourceFiles.add(sf);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
+        return sourceFiles;
+    }
+}
