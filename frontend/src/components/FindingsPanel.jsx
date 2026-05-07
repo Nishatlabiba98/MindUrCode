@@ -15,13 +15,14 @@ function Tab({ label, active, count, onClick }) {
   );
 }
 
-function FindingRow({ f }) {
+function FindingRow({ f, onSelect, onAction, selected }) {
   const tag = tagPalette[f.tagColor] || tagPalette.gray;
   return (
-    <div style={{
+    <div onClick={() => onSelect && onSelect(f)} style={{
       display: 'flex', gap: 14, padding: '14px 18px',
       borderBottom: `1px solid ${C.border}`,
-      alignItems: 'flex-start',
+      alignItems: 'flex-start', cursor: 'pointer',
+      background: selected ? C.accentSoft : 'transparent',
     }}>
       <div style={{
         width: 9, height: 9, borderRadius: '50%',
@@ -37,11 +38,13 @@ function FindingRow({ f }) {
             fontWeight: 500,
           }}>{f.tag}</span>
           {f.actions && f.actions.map((a, i) => (
-            <span key={i} style={{
-              padding: '2px 9px', borderRadius: 6, fontSize: 11,
-              background: C.panel, color: C.text,
-              border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer',
-            }}>{a}</span>
+            <span key={i}
+              onClick={e => { e.stopPropagation(); onAction && onAction(a, f); }}
+              style={{
+                padding: '2px 9px', borderRadius: 6, fontSize: 11,
+                background: C.panel, color: C.text,
+                border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer',
+              }}>{a}</span>
           ))}
         </div>
       </div>
@@ -50,7 +53,7 @@ function FindingRow({ f }) {
   );
 }
 
-export default function FindingsPanel({ tabs, findings, height = 360 }) {
+export default function FindingsPanel({ tabs, findings, height = 360, onSelect, onAction, selectedId }) {
   const [activeTab, setActiveTab] = useState(0);
   return (
     <div style={{ height, display: 'flex', flexDirection: 'column', background: C.panel }}>
@@ -64,7 +67,9 @@ export default function FindingsPanel({ tabs, findings, height = 360 }) {
         ))}
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {findings.map((f, i) => <FindingRow key={i} f={f} />)}
+        {findings.map((f, i) => (
+          <FindingRow key={i} f={f} onSelect={onSelect} onAction={onAction} selected={f.id === selectedId} />
+        ))}
       </div>
     </div>
   );

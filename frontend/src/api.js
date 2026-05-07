@@ -15,6 +15,12 @@ export async function fetchRepos(userId) {
   return res.json();
 }
 
+export async function fetchMethod(methodId) {
+  const res = await fetch(`${BASE}/analysis/methods/${methodId}`);
+  if (!res.ok) throw new Error(`Fetch method failed: ${res.status}`);
+  return res.json();
+}
+
 export async function runAnalysis(repoId, toolType) {
   const res = await fetch(
     `${BASE}/analysis/run?repoId=${repoId}&toolType=${toolType}`,

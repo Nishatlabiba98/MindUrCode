@@ -3,10 +3,12 @@ package MindUrCode.controller;
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
 import MindUrCode.model.AnalysisRun;
+import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.repository.AnalysisRunRepo;
+import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.RepositoryRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.ToolResultRepo;
@@ -35,6 +37,7 @@ public class AnalysisController {
     private final SourceFileRepo sourceFileRepo;
     private final AnalysisRunRepo analysisRunRepo;
     private final RepositoryRepo repositoryRepo;
+    private final MethodRepo methodRepo;
 
     public AnalysisController(TestCoverageService testCoverageService,
                               ClarityService clarityService,
@@ -44,7 +47,8 @@ public class AnalysisController {
                               ToolResultRepo toolResultRepo,
                               SourceFileRepo sourceFileRepo,
                               AnalysisRunRepo analysisRunRepo,
-                              RepositoryRepo repositoryRepo) {
+                              RepositoryRepo repositoryRepo,
+                              MethodRepo methodRepo) {
         this.testCoverageService   = testCoverageService;
         this.clarityService        = clarityService;
         this.documentationService  = documentationService;
@@ -54,6 +58,7 @@ public class AnalysisController {
         this.sourceFileRepo        = sourceFileRepo;
         this.analysisRunRepo       = analysisRunRepo;
         this.repositoryRepo        = repositoryRepo;
+        this.methodRepo            = methodRepo;
     }
 
     @PostMapping("/run")
@@ -89,6 +94,13 @@ public class AnalysisController {
     @GetMapping("/{runId}")
     public ResponseEntity<List<ToolResult>> getResults(@PathVariable UUID runId) {
         return ResponseEntity.ok(toolResultRepo.findByAnalysisRunId(runId));
+    }
+
+    @GetMapping("/methods/{methodId}")
+    public ResponseEntity<Method> getMethod(@PathVariable UUID methodId) {
+        return methodRepo.findById(methodId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/results/{id}/approve")
