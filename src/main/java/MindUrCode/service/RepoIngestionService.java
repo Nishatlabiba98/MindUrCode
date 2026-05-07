@@ -93,6 +93,10 @@ public class RepoIngestionService {
         return run;
     }
 
+    public AnalysisRun ingestRepository(String sourcePath, String name) {
+        return ingestRepository(sourcePath, name, null);
+    }
+
     private List<SourceFile> walkJavaFiles(Path root, Repository repo) throws IOException {
         List<SourceFile> sourceFiles = new ArrayList<>();
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
