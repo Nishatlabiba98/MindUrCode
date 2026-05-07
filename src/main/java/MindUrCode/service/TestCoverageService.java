@@ -1,12 +1,12 @@
 package MindUrCode.service;
 
-import MindUrCode.model.Method;
+import MindUrCode.model.MethodEntity;
 import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepo;
-import MindUrCode.repository.ToolResultRepo;
+import MindUrCode.repository.Method;
+import MindUrCode.repository.ToolResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +20,13 @@ import java.util.UUID;
 public class TestCoverageService {
 
     private final OllamaService ollamaService;
-    private final MethodRepo methodRepo;
-    private final ToolResultRepo toolResultRepo;
+    private final Method methodRepo;
+    private final ToolResult toolResultRepo;
 
     @Autowired
     public TestCoverageService(OllamaService ollamaService,
-                               MethodRepo methodRepo,
-                               ToolResultRepo toolResultRepo) {
+                               Method methodRepo,
+                               ToolResult toolResultRepo) {
         this.ollamaService  = ollamaService;
         this.methodRepo     = methodRepo;
         this.toolResultRepo = toolResultRepo;
@@ -37,10 +37,10 @@ public class TestCoverageService {
         List<ToolResult> allResults = new ArrayList<>();
 
         for (SourceFile file : sourceFiles) {
-            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-            List<Method> untestedMethods = findUntested(methods);
+            List<MethodEntity> methods = methodRepo.findBySourceFileId(file.getId());
+            List<MethodEntity> untestedMethods = findUntested(methods);
 
-            for (Method method : untestedMethods) {
+            for (MethodEntity method : untestedMethods) {
                 String prompt       = buildPrompt(method);
                 String aiSuggestion = ollamaService.analyze(prompt);
                 ToolResult result   = saveResult(method, aiSuggestion);
@@ -52,10 +52,10 @@ public class TestCoverageService {
     }
 
     // Filters methods down to those lacking test coverage
-    public List<Method> findUntested(List<Method> methods) {
-        List<Method> untested = new ArrayList<>();
+    public List<MethodEntity> findUntested(List<MethodEntity> methods) {
+        List<MethodEntity> untested = new ArrayList<>();
 
-        for (Method method : methods) {
+        for (MethodEntity method : methods) {
             // Skip methods that are themselves tests
             if (method.getMethodName().toLowerCase().startsWith("test")) {
                 continue;
@@ -81,7 +81,7 @@ public class TestCoverageService {
     }
 
     // Builds the prompt sent to the AI model
-    private String buildPrompt(Method method) {
+    private String buildPrompt(MethodEntity method) {
         return String.format(
                 "You are a Java testing expert reviewing code for the MindUrCode project.\n\n" +
                 "The following Java method has no unit test coverage:\n\n" +
@@ -102,7 +102,7 @@ public class TestCoverageService {
     }
 
     // Saves the AI's suggestion as a ToolResult in the database
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(MethodEntity method, String aiSuggestion) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());

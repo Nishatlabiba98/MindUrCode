@@ -36,7 +36,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface MethodRepo extends JpaRepository<Method, UUID> {
+public interface Method extends JpaRepository<Method, UUID> {
 
     // Get every method that belongs to a specific source file
     List<Method> findBySourceFileId(UUID sourceFileId);

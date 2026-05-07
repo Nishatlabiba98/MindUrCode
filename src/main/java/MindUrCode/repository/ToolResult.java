@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface ToolResultRepo extends JpaRepository<ToolResult, UUID> {
+public interface ToolResult extends JpaRepository<ToolResult, UUID> {
 
     // Get all AI suggestions ever generated for a specific method
     List<ToolResult> findByMethodId(UUID methodId);
