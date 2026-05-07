@@ -1,17 +1,31 @@
 package MindUrCode.controller;
 
+import MindUrCode.enums.ResultStatus;
+import MindUrCode.model.ToolResult;
+import MindUrCode.repository.ToolResultRepo;
+import MindUrCode.service.TestCoverageService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/analysis")
 public class AnalysisController {
 
-    // TODO: wire in TestCoverageService once Mahala is done
+    private final TestCoverageService testCoverageService;
+    private final ToolResultRepo toolResultRepo;
+
+    public AnalysisController(TestCoverageService testCoverageService,
+                              ToolResultRepo toolResultRepo) {
+        this.testCoverageService = testCoverageService;
+        this.toolResultRepo      = toolResultRepo;
+    }
 
     @PostMapping("/run")
     public String runTool(@RequestParam String repoId,
                           @RequestParam String toolType) {
-        // TODO: route to correct service by toolType
+        // TODO: fetch SourceFiles by repoId, create AnalysisRun, route to correct service by toolType
         return "Tool run initiated for: " + toolType;
     }
 
@@ -22,14 +36,22 @@ public class AnalysisController {
     }
 
     @PatchMapping("/results/{id}/approve")
-    public String approveResult(@PathVariable String id) {
-        // TODO: update ToolResult status to APPROVED
-        return "Approved: " + id;
+    public ResponseEntity<ToolResult> approveResult(@PathVariable UUID id) {
+        return toolResultRepo.findById(id)
+                .map(result -> {
+                    result.setStatus(ResultStatus.APPROVED);
+                    return ResponseEntity.ok(toolResultRepo.save(result));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/results/{id}/reject")
-    public String rejectResult(@PathVariable String id) {
-        // TODO: update ToolResult status to REJECTED
-        return "Rejected: " + id;
+    public ResponseEntity<ToolResult> rejectResult(@PathVariable UUID id) {
+        return toolResultRepo.findById(id)
+                .map(result -> {
+                    result.setStatus(ResultStatus.REJECTED);
+                    return ResponseEntity.ok(toolResultRepo.save(result));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
