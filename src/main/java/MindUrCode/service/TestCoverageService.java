@@ -5,8 +5,8 @@ import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepository;
-import MindUrCode.repository.ToolResultRepository;
+import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.ToolResultRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +20,13 @@ import java.util.UUID;
 public class TestCoverageService {
 
     private final OllamaService ollamaService;
-    private final MethodRepository methodRepo;
-    private final ToolResultRepository toolResultRepo;
+    private final MethodRepo methodRepo;
+    private final ToolResultRepo toolResultRepo;
 
     @Autowired
     public TestCoverageService(OllamaService ollamaService,
-                               MethodRepository methodRepo,
-                               ToolResultRepository toolResultRepo) {
+                               MethodRepo methodRepo,
+                               ToolResultRepo toolResultRepo) {
         this.ollamaService  = ollamaService;
         this.methodRepo     = methodRepo;
         this.toolResultRepo = toolResultRepo;
