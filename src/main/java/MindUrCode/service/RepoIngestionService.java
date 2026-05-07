@@ -1,15 +1,19 @@
 package MindUrCode.service;
 
+
 import MindUrCode.model.AnalysisRun;
+import MindUrCode.model.Method;
 import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.repository.AnalysisRunRepo;
 import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.RepositoryRepo;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -28,14 +32,16 @@ public class RepoIngestionService {
     private final JavaParserService javaParserService;
     private final MethodRepo methodRepo;
 
-    public RepoIngestionService(SourceFileRepo sourceFileRepo, AnalysisRunRepo analysisRunRepo,
-                                 RepositoryRepo repositoryRepo, JavaParserService javaParserService,
+    public RepoIngestionService(SourceFileRepo sourceFileRepo,
+                                 AnalysisRunRepo analysisRunRepo,
+                                 RepositoryRepo repositoryRepo,
+                                 JavaParserService javaParserService,
                                  MethodRepo methodRepo) {
-        this.sourceFileRepo = sourceFileRepo;
-        this.analysisRunRepo = analysisRunRepo;
-        this.repositoryRepo = repositoryRepo;
+        this.sourceFileRepo    = sourceFileRepo;
+        this.analysisRunRepo   = analysisRunRepo;
+        this.repositoryRepo    = repositoryRepo;
         this.javaParserService = javaParserService;
-        this.methodRepo = methodRepo;
+        this.methodRepo        = methodRepo;
     }
 
     public AnalysisRun ingestRepository(String sourcePath, String name, UUID userId) {
@@ -54,25 +60,12 @@ public class RepoIngestionService {
         run.setStartedAt(LocalDateTime.now());
         analysisRunRepo.save(run);
 
+        // 3. Walk the Java files and save each one
         try {
-            // If it's a GitHub URL, clone it first
-            Path rootPath;
-            if (sourcePath.startsWith("http")) {
-                Path tempDir = Files.createTempDirectory("mindurcode-clone-");
-                org.eclipse.jgit.api.Git.cloneRepository()
-                        .setURI(sourcePath)
-                        .setDirectory(tempDir.toFile())
-                        .call();
-                rootPath = tempDir;
-            } else {
-                rootPath = Paths.get(sourcePath);
-            }
-
-            // Walk and save all .java files
+            Path rootPath = Paths.get(sourcePath);
             List<SourceFile> files = walkJavaFiles(rootPath, repo);
             sourceFileRepo.saveAll(files);
 
-            // Parse each file and save its methods
             List<Method> allMethods = new ArrayList<>();
             for (SourceFile sf : files) {
                 try {
@@ -94,9 +87,11 @@ public class RepoIngestionService {
         return run;
     }
 
-    private List<SourceFile> walkJavaFiles(Path root, Repository repo) throws IOException {
+    // ── WALK FILES ────────────────────────────────
+    // Goes through every .java file in the folder
+    private List<SourceFile> walkJavaFiles(Path root, 
+                                            Repository repo) throws IOException {
         List<SourceFile> sourceFiles = new ArrayList<>();
-
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -110,7 +105,6 @@ public class RepoIngestionService {
                 return FileVisitResult.CONTINUE;
             }
         });
-
         return sourceFiles;
     }
 }
