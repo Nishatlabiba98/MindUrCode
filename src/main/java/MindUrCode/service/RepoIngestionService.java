@@ -3,17 +3,14 @@ package MindUrCode.service;
 
 import MindUrCode.model.AnalysisRun;
 import MindUrCode.model.Method;
-import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.repository.AnalysisRunRepo;
-import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.RepositoryRepo;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -60,9 +57,19 @@ public class RepoIngestionService {
         run.setStartedAt(LocalDateTime.now());
         analysisRunRepo.save(run);
 
-        // 3. Walk the Java files and save each one
         try {
-            Path rootPath = Paths.get(sourcePath);
+            // If it's a GitHub URL, clone it first
+            Path rootPath;
+            if (sourcePath.startsWith("http")) {
+                Path tempDir = Files.createTempDirectory("mindurcode-clone-");
+                org.eclipse.jgit.api.Git.cloneRepository()
+                        .setURI(sourcePath)
+                        .setDirectory(tempDir.toFile())
+                        .call();
+                rootPath = tempDir;
+            } else {
+                rootPath = Paths.get(sourcePath);
+            }
             List<SourceFile> files = walkJavaFiles(rootPath, repo);
             sourceFileRepo.saveAll(files);
 
@@ -79,7 +86,7 @@ public class RepoIngestionService {
             run.setCompletedAt(LocalDateTime.now());
             analysisRunRepo.save(run);
 
-        } catch (IOException | org.eclipse.jgit.api.errors.GitAPIException e) {
+        } catch (IOException | org.eclipse.jgit.api.errors.GitAPIException | Exception e) {
             run.setStatus("FAILED");
             analysisRunRepo.save(run);
         }
