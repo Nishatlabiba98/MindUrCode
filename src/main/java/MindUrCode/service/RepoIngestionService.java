@@ -93,6 +93,9 @@ public class RepoIngestionService {
         return run;
     }
 
+    /**
+     * Backward-compatible overload for callers that do not yet provide user ownership.
+     */
     public AnalysisRun ingestRepository(String sourcePath, String name) {
         return ingestRepository(sourcePath, name, null);
     }
