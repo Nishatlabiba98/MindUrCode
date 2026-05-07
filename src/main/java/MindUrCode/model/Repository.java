@@ -1,17 +1,18 @@
 package MindUrCode.model;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "repositories")
-public class Repository {
+public class repository {
 
 @Id
 @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,13 +35,13 @@ private LocalDateTime addedAt;
 
 
 
-public Repository() {
+public repository() {
 
 }
 
 
 
-public Repository(UUID userId, String name, String sourceType, String sourcePath) {
+public repository(UUID userId, String name, String sourceType, String sourcePath) {
     this.userId = userId;
     this.name = name;
     this.sourceType = sourceType;
