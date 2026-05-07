@@ -28,20 +28,23 @@ public class RepoIngestionService {
     private final JavaParserService javaParserService;
     private final MethodRepo methodRepo;
 
-    public RepoIngestionService(SourceFileRepo sourceFileRepo, AnalysisRunRepo analysisRunRepo,
-                                 RepositoryRepo repositoryRepo, JavaParserService javaParserService,
+    public RepoIngestionService(SourceFileRepo sourceFileRepo,
+                                 AnalysisRunRepo analysisRunRepo,
+                                 RepositoryRepo repositoryRepo,
+                                 JavaParserService javaParserService,
                                  MethodRepo methodRepo) {
-        this.sourceFileRepo = sourceFileRepo;
-        this.analysisRunRepo = analysisRunRepo;
-        this.repositoryRepo = repositoryRepo;
+        this.sourceFileRepo    = sourceFileRepo;
+        this.analysisRunRepo   = analysisRunRepo;
+        this.repositoryRepo    = repositoryRepo;
         this.javaParserService = javaParserService;
-        this.methodRepo = methodRepo;
+        this.methodRepo        = methodRepo;
     }
 
-    public AnalysisRun ingestRepository(String sourcePath, String name) {
+    public AnalysisRun ingestRepository(String sourcePath, String name, UUID userId) {
 
         Repository repo = new Repository();
         repo.setName(name);
+        repo.setUserId(userId);
         repo.setSourcePath(sourcePath);
         repo.setSourceType(sourcePath.startsWith("http") ? "GIT_URL" : "LOCAL_PATH");
         repo.setAddedAt(LocalDateTime.now());
@@ -54,7 +57,6 @@ public class RepoIngestionService {
         analysisRunRepo.save(run);
 
         try {
-            // If it's a GitHub URL, clone it first
             Path rootPath;
             if (sourcePath.startsWith("http")) {
                 Path tempDir = Files.createTempDirectory("mindurcode-clone-");
@@ -67,11 +69,9 @@ public class RepoIngestionService {
                 rootPath = Paths.get(sourcePath);
             }
 
-            // Walk and save all .java files
             List<SourceFile> files = walkJavaFiles(rootPath, repo);
             sourceFileRepo.saveAll(files);
 
-            // Parse each file and save its methods
             List<Method> allMethods = new ArrayList<>();
             for (SourceFile sf : files) {
                 try {
@@ -93,9 +93,15 @@ public class RepoIngestionService {
         return run;
     }
 
+    /**
+     * Backward-compatible overload for callers that do not yet provide user ownership.
+     */
+    public AnalysisRun ingestRepository(String sourcePath, String name) {
+        return ingestRepository(sourcePath, name, null);
+    }
+
     private List<SourceFile> walkJavaFiles(Path root, Repository repo) throws IOException {
         List<SourceFile> sourceFiles = new ArrayList<>();
-
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -109,7 +115,6 @@ public class RepoIngestionService {
                 return FileVisitResult.CONTINUE;
             }
         });
-
         return sourceFiles;
     }
 }
