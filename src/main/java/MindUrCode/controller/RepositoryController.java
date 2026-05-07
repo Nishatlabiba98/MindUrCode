@@ -1,7 +1,9 @@
 package MindUrCode.controller;
 
+import MindUrCode.model.AnalysisRun;
 import MindUrCode.model.Repository;
 import MindUrCode.repository.RepositoryRepo;
+import MindUrCode.service.RepoIngestionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,17 +15,20 @@ import java.util.UUID;
 public class RepositoryController {
 
     private final RepositoryRepo repositoryRepo;
+    private final RepoIngestionService repoIngestionService;
 
-    public RepositoryController(RepositoryRepo repositoryRepo) {
-        this.repositoryRepo = repositoryRepo;
+    public RepositoryController(RepositoryRepo repositoryRepo,
+                                RepoIngestionService repoIngestionService) {
+        this.repositoryRepo       = repositoryRepo;
+        this.repoIngestionService = repoIngestionService;
     }
 
-    // Submit a repo for analysis
+    // Submit a repo for ingestion and analysis
     @PostMapping
-    public ResponseEntity<Repository> submitRepo(@RequestBody Repository repository) {
-        // TODO: hand off to RepoIngestionService once Joseph builds it
-        Repository saved = repositoryRepo.save(repository);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<AnalysisRun> submitRepo(@RequestParam String sourcePath,
+                                                  @RequestParam String name) {
+        AnalysisRun run = repoIngestionService.ingestRepository(sourcePath, name);
+        return ResponseEntity.ok(run);
     }
 
     // Get all repos submitted by a specific user

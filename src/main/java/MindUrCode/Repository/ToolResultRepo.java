@@ -16,4 +16,7 @@ public interface ToolResultRepo extends JpaRepository<ToolResult, UUID> {
 
     // Get all results with a given status (PENDING, APPROVED, REJECTED)
     List<ToolResult> findByStatus(ResultStatus status);
+
+    // Get all results produced during a specific analysis run
+    List<ToolResult> findByAnalysisRunId(UUID analysisRunId);
 }

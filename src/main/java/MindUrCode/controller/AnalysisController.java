@@ -1,12 +1,16 @@
 package MindUrCode.controller;
 
 import MindUrCode.enums.ResultStatus;
+import MindUrCode.enums.ToolType;
+import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
+import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.ToolResultRepo;
 import MindUrCode.service.TestCoverageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -15,24 +19,33 @@ public class AnalysisController {
 
     private final TestCoverageService testCoverageService;
     private final ToolResultRepo toolResultRepo;
+    private final SourceFileRepo sourceFileRepo;
 
     public AnalysisController(TestCoverageService testCoverageService,
-                              ToolResultRepo toolResultRepo) {
+                              ToolResultRepo toolResultRepo,
+                              SourceFileRepo sourceFileRepo) {
         this.testCoverageService = testCoverageService;
         this.toolResultRepo      = toolResultRepo;
+        this.sourceFileRepo      = sourceFileRepo;
     }
 
     @PostMapping("/run")
-    public String runTool(@RequestParam String repoId,
-                          @RequestParam String toolType) {
-        // TODO: fetch SourceFiles by repoId, create AnalysisRun, route to correct service by toolType
-        return "Tool run initiated for: " + toolType;
+    public ResponseEntity<List<ToolResult>> runTool(@RequestParam UUID repoId,
+                                                    @RequestParam ToolType toolType) {
+        List<SourceFile> sourceFiles = sourceFileRepo.findByRepositoryId(repoId);
+
+        List<ToolResult> results = switch (toolType) {
+            case COVERAGE -> testCoverageService.analyzeCoverage(sourceFiles);
+            // TODO: wire in remaining services as teammates build them
+            default -> List.of();
+        };
+
+        return ResponseEntity.ok(results);
     }
 
     @GetMapping("/{runId}")
-    public String getResults(@PathVariable String runId) {
-        // TODO: fetch ToolResults by analysisRunId
-        return "Results for run: " + runId;
+    public ResponseEntity<List<ToolResult>> getResults(@PathVariable UUID runId) {
+        return ResponseEntity.ok(toolResultRepo.findByAnalysisRunId(runId));
     }
 
     @PatchMapping("/results/{id}/approve")
