@@ -14,4 +14,7 @@ public interface ToolResultRepo extends JpaRepository<ToolResult, UUID> {
     List<ToolResult> findByMethodId(UUID methodId);
 
     List<ToolResult> findByStatus(ResultStatus status);
+
+    // Get all results produced during a specific analysis run
+    List<ToolResult> findByAnalysisRunId(UUID analysisRunId);
 }
