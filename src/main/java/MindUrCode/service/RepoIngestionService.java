@@ -1,13 +1,16 @@
 package MindUrCode.service;
-import MindUrCode.model.AnalysisRun;
 
+import MindUrCode.model.AnalysisRun;
+import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.repository.AnalysisRunRepo;
+import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.RepositoryRepo;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -22,18 +25,21 @@ public class RepoIngestionService {
     private final SourceFileRepo sourceFileRepo;
     private final AnalysisRunRepo analysisRunRepo;
     private final RepositoryRepo repositoryRepo;
+    private final JavaParserService javaParserService;
+    private final MethodRepo methodRepo;
 
-    public RepoIngestionService(SourceFileRepo sourceFileRepo,AnalysisRunRepo analysisRunRepo,RepositoryRepo repositoryRepo) {
+    public RepoIngestionService(SourceFileRepo sourceFileRepo, AnalysisRunRepo analysisRunRepo,
+                                 RepositoryRepo repositoryRepo, JavaParserService javaParserService,
+                                 MethodRepo methodRepo) {
         this.sourceFileRepo = sourceFileRepo;
         this.analysisRunRepo = analysisRunRepo;
         this.repositoryRepo = repositoryRepo;
+        this.javaParserService = javaParserService;
+        this.methodRepo = methodRepo;
     }
 
-    // ── MAIN METHOD ───────────────────────────────
-    // Takes a path or URL, saves it, walks the files
     public AnalysisRun ingestRepository(String sourcePath, String name) {
 
-        // 1. Save the repository record
         Repository repo = new Repository();
         repo.setName(name);
         repo.setSourcePath(sourcePath);
@@ -41,25 +47,45 @@ public class RepoIngestionService {
         repo.setAddedAt(LocalDateTime.now());
         repositoryRepo.save(repo);
 
-        // 2. Create an analysis run
         AnalysisRun run = new AnalysisRun();
         run.setRepository(repo);
         run.setStatus("RUNNING");
         run.setStartedAt(LocalDateTime.now());
         analysisRunRepo.save(run);
 
-        // 3. Walk the Java files and save each one
         try {
-            Path rootPath = Paths.get(sourcePath);
+            // If it's a GitHub URL, clone it first
+            Path rootPath;
+            if (sourcePath.startsWith("http")) {
+                Path tempDir = Files.createTempDirectory("mindurcode-clone-");
+                org.eclipse.jgit.api.Git.cloneRepository()
+                        .setURI(sourcePath)
+                        .setDirectory(tempDir.toFile())
+                        .call();
+                rootPath = tempDir;
+            } else {
+                rootPath = Paths.get(sourcePath);
+            }
+
+            // Walk and save all .java files
             List<SourceFile> files = walkJavaFiles(rootPath, repo);
             sourceFileRepo.saveAll(files);
 
-            // 4. Mark as complete
+            // Parse each file and save its methods
+            List<Method> allMethods = new ArrayList<>();
+            for (SourceFile sf : files) {
+                try {
+                    List<Method> methods = javaParserService.extractMethods(new File(sf.getFilePath()), sf);
+                    allMethods.addAll(methods);
+                } catch (Exception ignored) {}
+            }
+            methodRepo.saveAll(allMethods);
+
             run.setStatus("COMPLETED");
             run.setCompletedAt(LocalDateTime.now());
             analysisRunRepo.save(run);
 
-        } catch (IOException e) {
+        } catch (IOException | org.eclipse.jgit.api.errors.GitAPIException e) {
             run.setStatus("FAILED");
             analysisRunRepo.save(run);
         }
@@ -67,16 +93,12 @@ public class RepoIngestionService {
         return run;
     }
 
-    // ── WALK FILES ────────────────────────────────
-    // Goes through every .java file in the folder
-    private List<SourceFile> walkJavaFiles(Path root, 
-                                            Repository repo) throws IOException {
+    private List<SourceFile> walkJavaFiles(Path root, Repository repo) throws IOException {
         List<SourceFile> sourceFiles = new ArrayList<>();
 
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult visitFile(Path file,
-                                              BasicFileAttributes attrs) {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 if (file.toString().endsWith(".java")) {
                     SourceFile sf = new SourceFile();
                     sf.setFilePath(file.toString());
