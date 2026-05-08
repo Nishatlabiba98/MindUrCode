@@ -32,7 +32,7 @@ public class TestCoverageService {
         this.toolResultRepo = toolResultRepo;
     }
 
-    public List<ToolResult> analyzeCoverage(List<SourceFile> sourceFiles) {
+    public List<ToolResult> analyzeCoverage(List<SourceFile> sourceFiles, UUID analysisRunId) {
         List<ToolResult> allResults = new ArrayList<>();
 
         for (SourceFile file : sourceFiles) {
@@ -42,7 +42,7 @@ public class TestCoverageService {
             for (Method method : untestedMethods) {
                 String prompt       = buildPrompt(method);
                 String aiSuggestion = ollamaService.analyze(prompt);
-                ToolResult result   = saveResult(method, aiSuggestion);
+                ToolResult result   = saveResult(method, aiSuggestion, analysisRunId);
                 allResults.add(result);
             }
         }
@@ -95,10 +95,11 @@ public class TestCoverageService {
         );
     }
 
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());
+        result.setAnalysisRunId(analysisRunId);
         result.setToolType(ToolType.COVERAGE);
         result.setAiSuggestion(aiSuggestion);
         result.setStatus(ResultStatus.PENDING);

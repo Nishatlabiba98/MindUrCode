@@ -32,10 +32,11 @@ public class RepoIngestionService {
 
     // ── MAIN METHOD ───────────────────────────────
     // Takes a path or URL, saves it, walks the files
-    public AnalysisRun ingestRepository(String sourcePath, String name) {
+    public AnalysisRun ingestRepository(String sourcePath, String name, UUID userId) {
 
         // 1. Save the repository record
         Repository repo = new Repository();
+        repo.setUserId(userId);
         repo.setName(name);
         repo.setSourcePath(sourcePath);
         repo.setSourceType(sourcePath.startsWith("http") ? "GIT_URL" : "LOCAL_PATH");

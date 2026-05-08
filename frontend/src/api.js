@@ -1,5 +1,18 @@
 const BASE = 'http://localhost:8080/api';
 
+export async function getReposByUser(userId) {
+  const res = await fetch(`${BASE}/repositories/user/${userId}`);
+  if (!res.ok) throw new Error(`Load failed: ${res.status}`);
+  return res.json();
+}
+
+export async function submitRepo(name, sourcePath, userId) {
+  const params = new URLSearchParams({ name, sourcePath, userId });
+  const res = await fetch(`${BASE}/repositories?${params}`, { method: 'POST' });
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+  return res.json();
+}
+
 export async function runAnalysis(repoId, toolType) {
   const res = await fetch(
     `${BASE}/analysis/run?repoId=${repoId}&toolType=${toolType}`,

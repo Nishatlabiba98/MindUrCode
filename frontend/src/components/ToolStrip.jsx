@@ -20,7 +20,7 @@ export default function ToolStrip({ url, language, setLanguage, languages, actio
       </div>
       {extras}
       {actions && actions.map((a, i) => (
-        <button key={i} style={btnStyle(a.primary)}>{a.label}</button>
+        <button key={i} onClick={a.onClick} style={btnStyle(a.primary)}>{a.label}</button>
       ))}
       <div style={{ width: 1, height: 22, background: C.border, margin: '0 4px' }} />
       <div style={{ display: 'flex', gap: 0, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>

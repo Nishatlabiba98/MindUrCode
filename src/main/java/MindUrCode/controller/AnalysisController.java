@@ -2,8 +2,12 @@ package MindUrCode.controller;
 
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
+import MindUrCode.model.AnalysisRun;
+import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
+import MindUrCode.repository.AnalysisRunRepo;
+import MindUrCode.repository.RepositoryRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.ToolResultRepo;
 import MindUrCode.service.ClarityService;
@@ -14,6 +18,7 @@ import MindUrCode.service.TestCoverageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +33,8 @@ public class AnalysisController {
     private final SimplificationService simplificationService;
     private final ToolResultRepo toolResultRepo;
     private final SourceFileRepo sourceFileRepo;
+    private final RepositoryRepo repositoryRepo;
+    private final AnalysisRunRepo analysisRunRepo;
 
     public AnalysisController(TestCoverageService testCoverageService,
                               ClarityService clarityService,
@@ -35,7 +42,9 @@ public class AnalysisController {
                               RefactoringService refactoringService,
                               SimplificationService simplificationService,
                               ToolResultRepo toolResultRepo,
-                              SourceFileRepo sourceFileRepo) {
+                              SourceFileRepo sourceFileRepo,
+                              RepositoryRepo repositoryRepo,
+                              AnalysisRunRepo analysisRunRepo) {
         this.testCoverageService   = testCoverageService;
         this.clarityService        = clarityService;
         this.documentationService  = documentationService;
@@ -43,20 +52,35 @@ public class AnalysisController {
         this.simplificationService = simplificationService;
         this.toolResultRepo        = toolResultRepo;
         this.sourceFileRepo        = sourceFileRepo;
+        this.repositoryRepo        = repositoryRepo;
+        this.analysisRunRepo       = analysisRunRepo;
     }
 
     @PostMapping("/run")
     public ResponseEntity<List<ToolResult>> runTool(@RequestParam UUID repoId,
                                                     @RequestParam ToolType toolType) {
+        Repository repo = repositoryRepo.findById(repoId)
+                .orElseThrow(() -> new IllegalArgumentException("Repo not found: " + repoId));
+
+        AnalysisRun run = new AnalysisRun();
+        run.setRepository(repo);
+        run.setStatus("RUNNING");
+        run.setStartedAt(LocalDateTime.now());
+        analysisRunRepo.save(run);
+
         List<SourceFile> sourceFiles = sourceFileRepo.findByRepositoryId(repoId);
 
         List<ToolResult> results = switch (toolType) {
-            case COVERAGE      -> testCoverageService.analyzeCoverage(sourceFiles);
-            case CLARITY       -> clarityService.analyzeClarity(sourceFiles);
-            case DOCUMENTATION -> documentationService.analyzeDocumentation(sourceFiles);
-            case REFACTORING   -> refactoringService.analyzeRefactoring(sourceFiles);
-            case SIMPLIFICATION -> simplificationService.analyzeSimplification(sourceFiles);
+            case COVERAGE       -> testCoverageService.analyzeCoverage(sourceFiles, run.getId());
+            case CLARITY        -> clarityService.analyzeClarity(sourceFiles, run.getId());
+            case DOCUMENTATION  -> documentationService.analyzeDocumentation(sourceFiles, run.getId());
+            case REFACTORING    -> refactoringService.analyzeRefactoring(sourceFiles, run.getId());
+            case SIMPLIFICATION -> simplificationService.analyzeSimplification(sourceFiles, run.getId());
         };
+
+        run.setStatus("COMPLETED");
+        run.setCompletedAt(LocalDateTime.now());
+        analysisRunRepo.save(run);
 
         return ResponseEntity.ok(results);
     }

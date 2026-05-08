@@ -25,9 +25,10 @@ public class RepositoryController {
 
     // Submit a repo for ingestion and analysis
     @PostMapping
-    public ResponseEntity<AnalysisRun> submitRepo(@RequestParam String sourcePath,
-                                                  @RequestParam String name) {
-        AnalysisRun run = repoIngestionService.ingestRepository(sourcePath, name);
+    public ResponseEntity<AnalysisRun> submitRepo(@RequestParam String name,
+                                                  @RequestParam String sourcePath,
+                                                  @RequestParam UUID userId) {
+        AnalysisRun run = repoIngestionService.ingestRepository(sourcePath, name, userId);
         return ResponseEntity.ok(run);
     }
 

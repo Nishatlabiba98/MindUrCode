@@ -87,7 +87,7 @@ public class RefactoringService {
     // RETURN TYPE:
     //   List<ToolResult> — all AI suggestions created during this run
     // =================================================================
-    public List<ToolResult> analyzeRefactoring(List<SourceFile> sourceFiles) {
+    public List<ToolResult> analyzeRefactoring(List<SourceFile> sourceFiles, UUID analysisRunId) {
 
         List<ToolResult> allResults = new ArrayList<>();
 
@@ -116,7 +116,7 @@ public class RefactoringService {
                 // Apply heuristics to decide if this method smells.
                 // If it does, send it to the AI and save the result.
                 if (hasCodeSmell(method)) {
-                    ToolResult result = detectSmells(method.getRawCode(), method);
+                    ToolResult result = detectSmells(method.getRawCode(), method, analysisRunId);
                     allResults.add(result);
                 }
             }
@@ -148,14 +148,14 @@ public class RefactoringService {
     // RETURN TYPE:
     //   ToolResult — the saved AI suggestion (status = PENDING)
     // =================================================================
-    public ToolResult detectSmells(String body, Method method) {
+    public ToolResult detectSmells(String body, Method method, UUID analysisRunId) {
 
         // Build the prompt and send it to the Qwen2.5-Coder AI.
         String prompt       = buildPrompt(body);
         String aiSuggestion = ollamaService.analyze(prompt);
 
         // Save and return the result.
-        return saveResult(method, aiSuggestion);
+        return saveResult(method, aiSuggestion, analysisRunId);
     }
 
     // =================================================================
@@ -281,10 +281,11 @@ public class RefactoringService {
     //
     // ToolType.REFACTORING — matches the enum value from James's ToolType
     // =================================================================
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());
+        result.setAnalysisRunId(analysisRunId);
         result.setToolType(ToolType.REFACTORING);
         result.setAiSuggestion(aiSuggestion);
         result.setStatus(ResultStatus.PENDING);
