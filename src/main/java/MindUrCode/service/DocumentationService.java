@@ -34,21 +34,22 @@ package MindUrCode.service;
 //                                    kept private here too)
 // =====================================================================
 
-import MindUrCode.model.Method;
-import MindUrCode.model.SourceFile;
-import MindUrCode.model.ToolResult;
-import MindUrCode.enums.ResultStatus;
-import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepo;
-import MindUrCode.repository.ToolResultRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import MindUrCode.enums.ResultStatus;
+import MindUrCode.enums.ToolType;
+import MindUrCode.model.Method;
+import MindUrCode.model.SourceFile;
+import MindUrCode.model.ToolResult;
+import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.ToolResultRepo;
 
 @Service
 public class DocumentationService {
@@ -177,6 +178,7 @@ public class DocumentationService {
         String prompt       = buildPrompt(sig, body);
         String aiSuggestion = ollamaService.analyze(prompt);
 
+        // Package the AI's suggestion into a ToolResult and save it.
         return saveResult(method, aiSuggestion, analysisRunId);
     }
 

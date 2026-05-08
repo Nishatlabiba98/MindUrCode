@@ -44,6 +44,7 @@ public class RepoIngestionService {
     public AnalysisRun ingestRepository(String sourcePath, String name, UUID userId) {
 
         Repository repo = new Repository();
+        repo.setUserId(userId);
         repo.setName(name);
         repo.setUserId(userId);
         repo.setSourcePath(sourcePath);

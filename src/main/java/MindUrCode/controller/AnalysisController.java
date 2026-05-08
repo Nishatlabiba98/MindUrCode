@@ -3,12 +3,10 @@ package MindUrCode.controller;
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
 import MindUrCode.model.AnalysisRun;
-import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.repository.AnalysisRunRepo;
-import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.RepositoryRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.ToolResultRepo;
@@ -35,9 +33,8 @@ public class AnalysisController {
     private final SimplificationService simplificationService;
     private final ToolResultRepo toolResultRepo;
     private final SourceFileRepo sourceFileRepo;
-    private final AnalysisRunRepo analysisRunRepo;
     private final RepositoryRepo repositoryRepo;
-    private final MethodRepo methodRepo;
+    private final AnalysisRunRepo analysisRunRepo;
 
     public AnalysisController(TestCoverageService testCoverageService,
                               ClarityService clarityService,
@@ -46,9 +43,8 @@ public class AnalysisController {
                               SimplificationService simplificationService,
                               ToolResultRepo toolResultRepo,
                               SourceFileRepo sourceFileRepo,
-                              AnalysisRunRepo analysisRunRepo,
                               RepositoryRepo repositoryRepo,
-                              MethodRepo methodRepo) {
+                              AnalysisRunRepo analysisRunRepo) {
         this.testCoverageService   = testCoverageService;
         this.clarityService        = clarityService;
         this.documentationService  = documentationService;
@@ -56,14 +52,22 @@ public class AnalysisController {
         this.simplificationService = simplificationService;
         this.toolResultRepo        = toolResultRepo;
         this.sourceFileRepo        = sourceFileRepo;
-        this.analysisRunRepo       = analysisRunRepo;
         this.repositoryRepo        = repositoryRepo;
-        this.methodRepo            = methodRepo;
+        this.analysisRunRepo       = analysisRunRepo;
     }
 
     @PostMapping("/run")
     public ResponseEntity<List<ToolResult>> runTool(@RequestParam UUID repoId,
                                                     @RequestParam ToolType toolType) {
+        Repository repo = repositoryRepo.findById(repoId)
+                .orElseThrow(() -> new IllegalArgumentException("Repo not found: " + repoId));
+
+        AnalysisRun run = new AnalysisRun();
+        run.setRepository(repo);
+        run.setStatus("RUNNING");
+        run.setStartedAt(LocalDateTime.now());
+        analysisRunRepo.save(run);
+
         List<SourceFile> sourceFiles = sourceFileRepo.findByRepositoryId(repoId);
 
         Repository repo = repositoryRepo.findById(repoId).orElseThrow();
@@ -77,11 +81,11 @@ public class AnalysisController {
         UUID runId = run.getId();
 
         List<ToolResult> results = switch (toolType) {
-            case COVERAGE       -> testCoverageService.analyzeCoverage(sourceFiles, runId);
-            case CLARITY        -> clarityService.analyzeClarity(sourceFiles, runId);
-            case DOCUMENTATION  -> documentationService.analyzeDocumentation(sourceFiles, runId);
-            case REFACTORING    -> refactoringService.analyzeRefactoring(sourceFiles, runId);
-            case SIMPLIFICATION -> simplificationService.analyzeSimplification(sourceFiles, runId);
+            case COVERAGE       -> testCoverageService.analyzeCoverage(sourceFiles, run.getId());
+            case CLARITY        -> clarityService.analyzeClarity(sourceFiles, run.getId());
+            case DOCUMENTATION  -> documentationService.analyzeDocumentation(sourceFiles, run.getId());
+            case REFACTORING    -> refactoringService.analyzeRefactoring(sourceFiles, run.getId());
+            case SIMPLIFICATION -> simplificationService.analyzeSimplification(sourceFiles, run.getId());
         };
 
         run.setStatus("COMPLETED");

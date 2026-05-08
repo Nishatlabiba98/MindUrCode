@@ -1,23 +1,15 @@
 const BASE = 'http://localhost:8080/api';
 
-export async function submitRepo(name, sourcePath, userId) {
-  const res = await fetch(
-    `${BASE}/repositories?name=${encodeURIComponent(name)}&sourcePath=${encodeURIComponent(sourcePath)}&userId=${userId}`,
-    { method: 'POST' }
-  );
-  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
-  return res.json();
-}
-
-export async function fetchRepos(userId) {
+export async function getReposByUser(userId) {
   const res = await fetch(`${BASE}/repositories/user/${userId}`);
-  if (!res.ok) throw new Error(`Fetch repos failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Load failed: ${res.status}`);
   return res.json();
 }
 
-export async function fetchMethod(methodId) {
-  const res = await fetch(`${BASE}/analysis/methods/${methodId}`);
-  if (!res.ok) throw new Error(`Fetch method failed: ${res.status}`);
+export async function submitRepo(name, sourcePath, userId) {
+  const params = new URLSearchParams({ name, sourcePath, userId });
+  const res = await fetch(`${BASE}/repositories?${params}`, { method: 'POST' });
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
   return res.json();
 }
 
