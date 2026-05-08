@@ -46,7 +46,6 @@ public class RepoIngestionService {
         Repository repo = new Repository();
         repo.setUserId(userId);
         repo.setName(name);
-        repo.setUserId(userId);
         repo.setSourcePath(sourcePath);
         repo.setSourceType(sourcePath.startsWith("http") ? "GIT_URL" : "LOCAL_PATH");
         repo.setAddedAt(LocalDateTime.now());

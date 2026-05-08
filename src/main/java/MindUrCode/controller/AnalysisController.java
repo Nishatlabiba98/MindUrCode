@@ -3,10 +3,12 @@ package MindUrCode.controller;
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
 import MindUrCode.model.AnalysisRun;
+import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
 import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.repository.AnalysisRunRepo;
+import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.RepositoryRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.ToolResultRepo;
@@ -35,6 +37,7 @@ public class AnalysisController {
     private final SourceFileRepo sourceFileRepo;
     private final RepositoryRepo repositoryRepo;
     private final AnalysisRunRepo analysisRunRepo;
+    private final MethodRepo methodRepo;
 
     public AnalysisController(TestCoverageService testCoverageService,
                               ClarityService clarityService,
@@ -44,7 +47,8 @@ public class AnalysisController {
                               ToolResultRepo toolResultRepo,
                               SourceFileRepo sourceFileRepo,
                               RepositoryRepo repositoryRepo,
-                              AnalysisRunRepo analysisRunRepo) {
+                              AnalysisRunRepo analysisRunRepo,
+                              MethodRepo methodRepo) {
         this.testCoverageService   = testCoverageService;
         this.clarityService        = clarityService;
         this.documentationService  = documentationService;
@@ -54,6 +58,7 @@ public class AnalysisController {
         this.sourceFileRepo        = sourceFileRepo;
         this.repositoryRepo        = repositoryRepo;
         this.analysisRunRepo       = analysisRunRepo;
+        this.methodRepo            = methodRepo;
     }
 
     @PostMapping("/run")
@@ -62,23 +67,13 @@ public class AnalysisController {
         Repository repo = repositoryRepo.findById(repoId)
                 .orElseThrow(() -> new IllegalArgumentException("Repo not found: " + repoId));
 
+        List<SourceFile> sourceFiles = sourceFileRepo.findByRepositoryId(repoId);
+
         AnalysisRun run = new AnalysisRun();
         run.setRepository(repo);
         run.setStatus("RUNNING");
         run.setStartedAt(LocalDateTime.now());
         analysisRunRepo.save(run);
-
-        List<SourceFile> sourceFiles = sourceFileRepo.findByRepositoryId(repoId);
-
-        Repository repo = repositoryRepo.findById(repoId).orElseThrow();
-        AnalysisRun run = AnalysisRun.builder()
-                .repository(repo)
-                .status("RUNNING")
-                .startedAt(LocalDateTime.now())
-                .build();
-        analysisRunRepo.save(run);
-
-        UUID runId = run.getId();
 
         List<ToolResult> results = switch (toolType) {
             case COVERAGE       -> testCoverageService.analyzeCoverage(sourceFiles, run.getId());

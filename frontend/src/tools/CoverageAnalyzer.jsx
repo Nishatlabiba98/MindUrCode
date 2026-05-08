@@ -7,8 +7,9 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod } from '../api';
 import RepoPicker from '../components/RepoPicker';
+import { C } from '../theme';
 
 export default function CoverageAnalyzer() {
   const [language, setLanguage] = useState('java');
