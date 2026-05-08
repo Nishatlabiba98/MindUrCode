@@ -1,5 +1,6 @@
 package MindUrCode.service;
 
+
 import MindUrCode.model.AnalysisRun;
 import MindUrCode.model.Method;
 import MindUrCode.model.Repository;
@@ -45,7 +46,6 @@ public class RepoIngestionService {
         Repository repo = new Repository();
         repo.setUserId(userId);
         repo.setName(name);
-        repo.setUserId(userId);
         repo.setSourcePath(sourcePath);
         repo.setSourceType(sourcePath.startsWith("http") ? "GIT_URL" : "LOCAL_PATH");
         repo.setAddedAt(LocalDateTime.now());
@@ -58,6 +58,7 @@ public class RepoIngestionService {
         analysisRunRepo.save(run);
 
         try {
+            // If it's a GitHub URL, clone it first
             Path rootPath;
             if (sourcePath.startsWith("http")) {
                 Path tempDir = Files.createTempDirectory("mindurcode-clone-");
@@ -69,7 +70,6 @@ public class RepoIngestionService {
             } else {
                 rootPath = Paths.get(sourcePath);
             }
-
             List<SourceFile> files = walkJavaFiles(rootPath, repo);
             sourceFileRepo.saveAll(files);
 
@@ -86,7 +86,7 @@ public class RepoIngestionService {
             run.setCompletedAt(LocalDateTime.now());
             analysisRunRepo.save(run);
 
-        } catch (IOException | org.eclipse.jgit.api.errors.GitAPIException e) {
+        } catch (Exception e) {
             run.setStatus("FAILED");
             analysisRunRepo.save(run);
         }
@@ -94,14 +94,10 @@ public class RepoIngestionService {
         return run;
     }
 
-    /**
-     * Backward-compatible overload for callers that do not yet provide user ownership.
-     */
-    public AnalysisRun ingestRepository(String sourcePath, String name) {
-        return ingestRepository(sourcePath, name, null);
-    }
-
-    private List<SourceFile> walkJavaFiles(Path root, Repository repo) throws IOException {
+    // ── WALK FILES ────────────────────────────────
+    // Goes through every .java file in the folder
+    private List<SourceFile> walkJavaFiles(Path root, 
+                                            Repository repo) throws IOException {
         List<SourceFile> sourceFiles = new ArrayList<>();
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
             @Override

@@ -40,21 +40,22 @@ package MindUrCode.service;
 //
 // =====================================================================
 
-import MindUrCode.model.Method;
-import MindUrCode.model.SourceFile;
-import MindUrCode.model.ToolResult;
-import MindUrCode.enums.ResultStatus;
-import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepo;
-import MindUrCode.repository.ToolResultRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import MindUrCode.enums.ResultStatus;
+import MindUrCode.enums.ToolType;
+import MindUrCode.model.Method;
+import MindUrCode.model.SourceFile;
+import MindUrCode.model.ToolResult;
+import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.ToolResultRepo;
 
 // @Service — Spring creates and manages one instance of this class.
 @Service
@@ -173,7 +174,6 @@ public class SimplificationService {
     // =================================================================
     public ToolResult simplify(String body, Method method, UUID analysisRunId) {
 
-        // Build the prompt and send it to Qwen2.5-Coder via OllamaService.
         String prompt       = buildPrompt(body);
         String aiSuggestion = ollamaService.analyze(prompt);
 

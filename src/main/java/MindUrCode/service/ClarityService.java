@@ -1,5 +1,13 @@
 package MindUrCode.service;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
 import MindUrCode.model.Method;
@@ -7,13 +15,6 @@ import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.ToolResultRepo;
-import org.springframework.stereotype.Service;
-
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ClarityService {

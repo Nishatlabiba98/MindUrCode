@@ -7,8 +7,9 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod } from '../api';
 import RepoPicker from '../components/RepoPicker';
+import { C } from '../theme';
 
 export default function ClarityScanner() {
   const [language, setLanguage] = useState('java');
@@ -16,6 +17,8 @@ export default function ClarityScanner() {
   const [findings, setFindings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedFinding, setSelectedFinding] = useState(null);
+  const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
 
   async function handleRun() {
@@ -32,6 +35,16 @@ export default function ClarityScanner() {
     }
   }
 
+  async function handleSelect(finding) {
+    setSelectedFinding(finding);
+    try {
+      const method = await fetchMethod(finding._raw.methodId);
+      setMethodCode(method.rawCode || '');
+    } catch (e) {
+      setMethodCode('Could not load method code.');
+    }
+  }
+
   async function handleAction(action, finding) {
     if (action === 'Approve') {
       const updated = await approveResult(finding.id);
@@ -41,6 +54,13 @@ export default function ClarityScanner() {
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
     }
   }
+
+  const preStyle = {
+    margin: 0, padding: '12px 16px',
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: 12.5, color: C.text, whiteSpace: 'pre-wrap',
+  };
+  const placeholderStyle = { padding: 16, color: C.textMute, fontSize: 13 };
 
   return (
     <AppShell tab="MindUrCode — Clarity" url="minduurcode.app/clarity">
@@ -56,15 +76,31 @@ export default function ClarityScanner() {
         <Sidebar activeIdx={2} />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           <CodePane
-            title={sample.file} badge={`${findings.length} issues`} badgeKind="warn"
-            lines={sample.original} totalLines={sample.lineCount}
+            title="Method" badge={`${findings.length} issues`} badgeKind="warn"
+            lines={[]} totalLines={0}
+            rightContent={
+              methodCode
+                ? <pre style={preStyle}>{methodCode}</pre>
+                : <div style={placeholderStyle}>Select a finding below to view the method code.</div>
+            }
+          />
+          <CodePane
+            title="AI Suggestion" badge="Clarity" badgeKind="info"
+            lines={[]} totalLines={0}
+            rightContent={
+              selectedFinding
+                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
+                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
+            }
           />
         </div>
       </div>
       <FindingsPanel
         tabs={[{ label: 'Issues', count: findings.length }, { label: 'Metrics' }, { label: 'History' }]}
         findings={findings}
+        onSelect={handleSelect}
         onAction={handleAction}
+        selectedId={selectedFinding?.id}
       />
       <StatusBar language={sample.label} file={sample.file} lineCount={sample.lineCount} />
     </AppShell>

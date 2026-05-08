@@ -35,21 +35,22 @@ package MindUrCode.service;
 //   2. buildPrompt(body)       — constructs the AI prompt (private in UML)
 // =====================================================================
 
-import MindUrCode.model.Method;
-import MindUrCode.model.SourceFile;
-import MindUrCode.model.ToolResult;
-import MindUrCode.enums.ResultStatus;
-import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepo;
-import MindUrCode.repository.ToolResultRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import MindUrCode.enums.ResultStatus;
+import MindUrCode.enums.ToolType;
+import MindUrCode.model.Method;
+import MindUrCode.model.SourceFile;
+import MindUrCode.model.ToolResult;
+import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.ToolResultRepo;
 
 // @Service — Spring creates and manages one instance of this class.
 // It is injected into AnalysisController automatically.
@@ -150,7 +151,6 @@ public class RefactoringService {
     // =================================================================
     public ToolResult detectSmells(String body, Method method, UUID analysisRunId) {
 
-        // Build the prompt and send it to the Qwen2.5-Coder AI.
         String prompt       = buildPrompt(body);
         String aiSuggestion = ollamaService.analyze(prompt);
 

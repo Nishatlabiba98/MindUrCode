@@ -7,8 +7,9 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod } from '../api';
 import RepoPicker from '../components/RepoPicker';
+import { C } from '../theme';
 
 export default function CoverageAnalyzer() {
   const [language, setLanguage] = useState('java');
@@ -16,12 +17,9 @@ export default function CoverageAnalyzer() {
   const [findings, setFindings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedFinding, setSelectedFinding] = useState(null);
+  const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
-
-  const lineMeta = sample.original.map((_, i) => {
-    const covered = i % 5 !== 3;
-    return { gutterStripe: covered ? C.covGreen : C.covRed };
-  });
 
   async function handleRun() {
     if (!repoId) return;
@@ -37,6 +35,16 @@ export default function CoverageAnalyzer() {
     }
   }
 
+  async function handleSelect(finding) {
+    setSelectedFinding(finding);
+    try {
+      const method = await fetchMethod(finding._raw.methodId);
+      setMethodCode(method.rawCode || '');
+    } catch (e) {
+      setMethodCode('Could not load method code.');
+    }
+  }
+
   async function handleAction(action, finding) {
     if (action === 'Approve') {
       const updated = await approveResult(finding.id);
@@ -46,6 +54,13 @@ export default function CoverageAnalyzer() {
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
     }
   }
+
+  const preStyle = {
+    margin: 0, padding: '12px 16px',
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: 12.5, color: C.text, whiteSpace: 'pre-wrap',
+  };
+  const placeholderStyle = { padding: 16, color: C.textMute, fontSize: 13 };
 
   return (
     <AppShell tab="MindUrCode — Coverage" url="minduurcode.app/coverage">
@@ -61,16 +76,31 @@ export default function CoverageAnalyzer() {
         <Sidebar activeIdx={1} />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           <CodePane
-            title={sample.file} badge="Coverage map" badgeKind="info"
-            lines={sample.original} totalLines={sample.lineCount}
-            lineMeta={lineMeta}
+            title="Method" badge="Coverage map" badgeKind="info"
+            lines={[]} totalLines={0}
+            rightContent={
+              methodCode
+                ? <pre style={preStyle}>{methodCode}</pre>
+                : <div style={placeholderStyle}>Select a finding below to view the method code.</div>
+            }
+          />
+          <CodePane
+            title="AI Suggestion" badge="Test gaps" badgeKind="warn"
+            lines={[]} totalLines={0}
+            rightContent={
+              selectedFinding
+                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
+                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
+            }
           />
         </div>
       </div>
       <FindingsPanel
         tabs={[{ label: 'Gaps', count: findings.length }, { label: 'Files' }, { label: 'Report' }]}
         findings={findings}
+        onSelect={handleSelect}
         onAction={handleAction}
+        selectedId={selectedFinding?.id}
       />
       <StatusBar language={sample.label} file={sample.file} lineCount={sample.lineCount} />
     </AppShell>
