@@ -5,12 +5,14 @@ import CoverageAnalyzer from './tools/CoverageAnalyzer';
 import ClarityScanner from './tools/ClarityScanner';
 import DocumentationAssistant from './tools/DocumentationAssistant';
 import RefactoringAdvisor from './tools/RefactoringAdvisor';
+import SubmitRepo from './pages/SubmitRepo';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/simplify" replace />} />
+        <Route path="/" element={<Navigate to="/repos" replace />} />
+        <Route path="/repos" element={<SubmitRepo />} />
         <Route path="/simplify" element={<SimplificationEngine />} />
         <Route path="/coverage" element={<CoverageAnalyzer />} />
         <Route path="/clarity" element={<ClarityScanner />} />

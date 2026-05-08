@@ -91,7 +91,7 @@ public class SimplificationService {
     // RETURN TYPE:
     //   List<ToolResult> — every simplification suggestion created
     // =================================================================
-    public List<ToolResult> analyzeSimplification(List<SourceFile> sourceFiles) {
+    public List<ToolResult> analyzeSimplification(List<SourceFile> sourceFiles, UUID analysisRunId) {
 
         List<ToolResult> allResults = new ArrayList<>();
 
@@ -120,7 +120,7 @@ public class SimplificationService {
                 // Apply simplicity heuristics.
                 // If the method has complexity issues, send it to the AI.
                 if (needsSimplification(method)) {
-                    ToolResult result = simplify(method.getRawCode(), method);
+                    ToolResult result = simplify(method.getRawCode(), method, analysisRunId);
                     allResults.add(result);
                 }
             }
@@ -171,14 +171,14 @@ public class SimplificationService {
     // RETURN TYPE:
     //   ToolResult — the saved AI suggestion (status = PENDING)
     // =================================================================
-    public ToolResult simplify(String body, Method method) {
+    public ToolResult simplify(String body, Method method, UUID analysisRunId) {
 
         // Build the prompt and send it to Qwen2.5-Coder via OllamaService.
         String prompt       = buildPrompt(body);
         String aiSuggestion = ollamaService.analyze(prompt);
 
         // Save and return the result.
-        return saveResult(method, aiSuggestion);
+        return saveResult(method, aiSuggestion, analysisRunId);
     }
 
     // =================================================================
@@ -294,10 +294,11 @@ public class SimplificationService {
     // ToolType.SIMPLIFICATION — matches James's ToolType enum value
     // ResultStatus.PENDING    — developer must approve; nothing auto-applies
     // =================================================================
-    private ToolResult saveResult(Method method, String aiSuggestion) {
+    private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
         result.setId(UUID.randomUUID());
         result.setMethodId(method.getId());
+        result.setAnalysisRunId(analysisRunId);
         result.setToolType(ToolType.SIMPLIFICATION);
         result.setAiSuggestion(aiSuggestion);
         result.setStatus(ResultStatus.PENDING);
