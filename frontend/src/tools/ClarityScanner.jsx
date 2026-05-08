@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SAMPLES, LANGUAGES } from '../data/samples';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 import { C } from '../theme';
 
@@ -20,6 +20,13 @@ export default function ClarityScanner() {
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
+
+  useEffect(() => {
+    if (!repoId) return;
+    fetchLatestResults(repoId, 'CLARITY')
+      .then(results => { if (results.length) setFindings(results.map(mapToFinding)); })
+      .catch(() => {});
+  }, [repoId]);
 
   async function handleRun() {
     if (!repoId) return;

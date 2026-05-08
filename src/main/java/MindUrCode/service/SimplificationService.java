@@ -108,16 +108,6 @@ public class SimplificationService {
                     continue;
                 }
 
-                // Skip if already analyzed for SIMPLIFICATION.
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.SIMPLIFICATION);
-
-                if (alreadyAnalyzed) {
-                    continue;
-                }
-
                 // Apply simplicity heuristics.
                 // If the method has complexity issues, send it to the AI.
                 if (needsSimplification(method)) {

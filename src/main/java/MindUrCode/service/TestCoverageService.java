@@ -61,14 +61,6 @@ public class TestCoverageService {
             if (rawCode != null && rawCode.contains("@Test")) {
                 continue;
             }
-            boolean alreadyAnalyzed = toolResultRepo
-                    .findByMethodId(method.getId())
-                    .stream()
-                    .anyMatch(r -> r.getToolType() == ToolType.COVERAGE);
-            if (alreadyAnalyzed) {
-                continue;
-            }
-
             untested.add(method);
         }
 

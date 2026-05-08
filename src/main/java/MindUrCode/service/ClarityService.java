@@ -36,11 +36,6 @@ public class ClarityService {
         for (SourceFile file : sourceFiles) {
             List<Method> methods = methodRepo.findBySourceFileId(file.getId());
             for (Method method : methods) {
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.CLARITY);
-                if (alreadyAnalyzed) continue;
                 ToolResult result = analyzeMethod(method, analysisRunId);
                 allResults.add(result);
             }

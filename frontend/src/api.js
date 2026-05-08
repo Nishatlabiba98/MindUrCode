@@ -19,6 +19,12 @@ export async function fetchMethod(methodId) {
   return res.json();
 }
 
+export async function fetchLatestResults(repoId, toolType) {
+  const res = await fetch(`${BASE}/analysis/results/latest?repoId=${repoId}&toolType=${toolType}`);
+  if (!res.ok) throw new Error(`Fetch latest failed: ${res.status}`);
+  return res.json();
+}
+
 export async function runAnalysis(repoId, toolType) {
   const res = await fetch(
     `${BASE}/analysis/run?repoId=${repoId}&toolType=${toolType}`,

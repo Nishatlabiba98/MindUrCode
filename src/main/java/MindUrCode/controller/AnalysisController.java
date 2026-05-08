@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/analysis")
@@ -93,6 +94,28 @@ public class AnalysisController {
     @GetMapping("/{runId}")
     public ResponseEntity<List<ToolResult>> getResults(@PathVariable UUID runId) {
         return ResponseEntity.ok(toolResultRepo.findByAnalysisRunId(runId));
+    }
+
+    @GetMapping("/results/latest")
+    public ResponseEntity<List<ToolResult>> getLatestResults(
+            @RequestParam UUID repoId,
+            @RequestParam ToolType toolType) {
+
+        List<SourceFile> files = sourceFileRepo.findByRepositoryId(repoId);
+
+        List<UUID> methodIds = files.stream()
+                .flatMap(sf -> methodRepo.findBySourceFileId(sf.getId()).stream())
+                .map(Method::getId)
+                .collect(Collectors.toList());
+
+        List<ToolResult> latest = methodIds.stream()
+                .flatMap(mid -> toolResultRepo.findByMethodId(mid).stream()
+                        .filter(r -> r.getToolType() == toolType)
+                        .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                        .limit(1))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(latest);
     }
 
     @GetMapping("/methods/{methodId}")

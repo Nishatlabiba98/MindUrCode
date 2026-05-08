@@ -111,17 +111,6 @@ public class DocumentationService {
                     continue; // Already documented — skip
                 }
 
-                // Check if this method has already been analyzed for DOCUMENTATION.
-                // We do not want to send duplicate AI calls.
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.DOCUMENTATION);
-
-                if (alreadyAnalyzed) {
-                    continue;
-                }
-
                 // Build the method signature line for the prompt.
                 // The "signature" is the first line of a method:
                 //   e.g.  "public List<String> getActiveUsers(List<User> users)"
