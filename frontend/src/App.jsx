@@ -18,6 +18,7 @@ export default function App() {
         <Route path="/clarity" element={<ClarityScanner />} />
         <Route path="/docs" element={<DocumentationAssistant />} />
         <Route path="/refactor" element={<RefactoringAdvisor />} />
+        <Route path="*" element={<Navigate to="/repos" replace />} />
       </Routes>
     </BrowserRouter>
   );
