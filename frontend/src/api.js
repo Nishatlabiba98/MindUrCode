@@ -56,7 +56,7 @@ export function mapToFinding(result) {
     title: `${result.toolType} suggestion`,
     desc: result.aiSuggestion,
     loc: `Method: ${result.methodId}`,
-    actions: result.status === 'PENDING' ? ['Approve', 'Reject'] : [],
+    actions: result.status === 'PENDING' ? ['Approve', 'Edit', 'Reject'] : [],
     _raw: result,
   };
 }

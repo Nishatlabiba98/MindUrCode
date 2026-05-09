@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { C } from '../theme';
 
-export default function MenuBar({ items = ['File', 'Edit', 'View', 'Analysis', 'Export', 'Help'] }) {
+export default function MenuBar() {
+  const navigate = useNavigate();
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 24,
@@ -9,9 +11,11 @@ export default function MenuBar({ items = ['File', 'Edit', 'View', 'Analysis', '
       borderBottom: `1px solid ${C.border}`,
       background: C.panel, fontSize: 13, color: C.text,
     }}>
-      {items.map((it, i) => (
-        <span key={i} style={{ cursor: 'default', color: i === 0 ? C.text : C.textDim }}>{it}</span>
-      ))}
+      <span onClick={() => navigate('/')} style={{ cursor:'pointer', color:C.text }}>File</span>
+      <span style={{ cursor:'default', color:C.textDim }}>Edit</span>
+      <span style={{ cursor:'default', color:C.textDim }}>View</span>
+      <span onClick={() => window.print()} style={{ cursor:'pointer', color:C.textDim }}>Export</span>
+      <span style={{ cursor:'default', color:C.textDim }}>Help</span>
     </div>
   );
 }

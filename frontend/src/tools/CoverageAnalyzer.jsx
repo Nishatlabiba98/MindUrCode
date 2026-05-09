@@ -13,7 +13,7 @@ import { C } from '../theme';
 
 export default function CoverageAnalyzer() {
   const [language, setLanguage] = useState('java');
-  const [repoId, setRepoId] = useState('');
+  const [repoId, setRepoId] = useState(localStorage.getItem('mindurcode_repoId') || '');
   const [findings, setFindings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -56,6 +56,8 @@ export default function CoverageAnalyzer() {
     if (action === 'Approve') {
       const updated = await approveResult(finding.id);
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    } else if (action === 'Edit') {
+      setFindings(prev => prev.map(x => x.id === finding.id ? finding : x));
     } else if (action === 'Reject') {
       const updated = await rejectResult(finding.id);
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
