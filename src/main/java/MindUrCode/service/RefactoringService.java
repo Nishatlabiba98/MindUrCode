@@ -107,8 +107,12 @@ public class RefactoringService {
                 // Apply heuristics to decide if this method smells.
                 // If it does, send it to the AI and save the result.
                 if (hasCodeSmell(method)) {
-                    ToolResult result = detectSmells(method.getRawCode(), method, analysisRunId);
-                    allResults.add(result);
+                    try {
+                        ToolResult result = detectSmells(method.getRawCode(), method, analysisRunId);
+                        allResults.add(result);
+                    } catch (Exception e) {
+                        // Skip methods where Ollama fails — return the rest
+                    }
                 }
             }
         }

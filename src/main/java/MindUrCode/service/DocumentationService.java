@@ -124,8 +124,12 @@ public class DocumentationService {
                 String signature = extractSignature(rawCode);
 
                 // Call the UML-specified public method to generate the Javadoc.
-                ToolResult result = generateJavadoc(signature, rawCode, method, analysisRunId);
-                allResults.add(result);
+                try {
+                    ToolResult result = generateJavadoc(signature, rawCode, method, analysisRunId);
+                    allResults.add(result);
+                } catch (Exception e) {
+                    // Skip methods where Ollama fails — return the rest
+                }
             }
         }
 

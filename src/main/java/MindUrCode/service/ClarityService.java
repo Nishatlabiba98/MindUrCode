@@ -36,8 +36,12 @@ public class ClarityService {
         for (SourceFile file : sourceFiles) {
             List<Method> methods = methodRepo.findBySourceFileId(file.getId());
             for (Method method : methods) {
-                ToolResult result = analyzeMethod(method, analysisRunId);
-                allResults.add(result);
+                try {
+                    ToolResult result = analyzeMethod(method, analysisRunId);
+                    allResults.add(result);
+                } catch (Exception e) {
+                    // Skip methods where Ollama times out or fails — partial results are better than none
+                }
             }
         }
         return allResults;
