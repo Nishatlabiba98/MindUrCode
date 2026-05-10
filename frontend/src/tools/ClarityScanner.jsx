@@ -24,10 +24,30 @@ export default function ClarityScanner() {
   const sample = SAMPLES[language];
 
   useEffect(() => {
-    if (!repoId) return;
+    let isActive = true;
+    setError(null);
+    setFindings([]);
+
+    if (!repoId) {
+      return () => {
+        isActive = false;
+      };
+    }
+
     fetchLatestResults(repoId, 'CLARITY')
-      .then(results => { if (results.length) setFindings(results.map(mapToFinding)); })
-      .catch(() => {});
+      .then(results => {
+        if (!isActive) return;
+        setFindings(results.map(mapToFinding));
+      })
+      .catch((e) => {
+        if (!isActive) return;
+        setFindings([]);
+        setError(e?.message || 'Failed to load latest CLARITY results.');
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [repoId]);
 
   async function handleRun() {
