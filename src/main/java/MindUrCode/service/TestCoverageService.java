@@ -40,10 +40,14 @@ public class TestCoverageService {
             List<Method> untestedMethods = findUntested(methods);
 
             for (Method method : untestedMethods) {
-                String prompt       = buildPrompt(method);
-                String aiSuggestion = ollamaService.analyze(prompt);
-                ToolResult result   = saveResult(method, aiSuggestion, analysisRunId);
-                allResults.add(result);
+                try {
+                    String prompt       = buildPrompt(method);
+                    String aiSuggestion = ollamaService.analyze(prompt);
+                    ToolResult result   = saveResult(method, aiSuggestion, analysisRunId);
+                    allResults.add(result);
+                } catch (Exception e) {
+                    // Skip methods where Ollama fails — return the rest
+                }
             }
         }
 
@@ -61,14 +65,6 @@ public class TestCoverageService {
             if (rawCode != null && rawCode.contains("@Test")) {
                 continue;
             }
-            boolean alreadyAnalyzed = toolResultRepo
-                    .findByMethodId(method.getId())
-                    .stream()
-                    .anyMatch(r -> r.getToolType() == ToolType.COVERAGE);
-            if (alreadyAnalyzed) {
-                continue;
-            }
-
             untested.add(method);
         }
 

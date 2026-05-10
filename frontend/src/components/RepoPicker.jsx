@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { C, btnStyle } from '../theme';
 import { getReposByUser } from '../api';
+
+const KEY_USER = 'mindurcode_userId';
+const KEY_REPO = 'mindurcode_repoId';
 
 export default function RepoPicker({ onRepoId }) {
   const [userId, setUserId] = useState('');
@@ -8,16 +11,33 @@ export default function RepoPicker({ onRepoId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  async function handleLoad() {
-    if (!userId.trim()) return;
+  // On mount: restore saved userId and auto-load repos
+  useEffect(() => {
+    const savedUser = localStorage.getItem(KEY_USER);
+    if (savedUser) {
+      setUserId(savedUser);
+      loadRepos(savedUser);
+    }
+  }, []);
+
+  async function loadRepos(uid) {
+    if (!uid || !uid.trim()) return;
     setLoading(true);
     setError(null);
     setRepos(null);
     onRepoId('');
     try {
-      const data = await getReposByUser(userId.trim());
+      const data = await getReposByUser(uid.trim());
       setRepos(data);
-      if (data.length === 1) onRepoId(data[0].id);
+
+      // Auto-select saved repo if it's in the list
+      const savedRepo = localStorage.getItem(KEY_REPO);
+      if (savedRepo && data.find(r => r.id === savedRepo)) {
+        onRepoId(savedRepo);
+      } else if (data.length === 1) {
+        onRepoId(data[0].id);
+        localStorage.setItem(KEY_REPO, data[0].id);
+      }
     } catch (e) {
       setError('No repos found');
     } finally {
@@ -25,8 +45,18 @@ export default function RepoPicker({ onRepoId }) {
     }
   }
 
+  function handleUserChange(e) {
+    setUserId(e.target.value);
+    localStorage.setItem(KEY_USER, e.target.value);
+  }
+
   function handleKeyDown(e) {
-    if (e.key === 'Enter') handleLoad();
+    if (e.key === 'Enter') loadRepos(userId);
+  }
+
+  function handleRepoChange(e) {
+    localStorage.setItem(KEY_REPO, e.target.value);
+    onRepoId(e.target.value);
   }
 
   const inputStyle = {
@@ -41,12 +71,12 @@ export default function RepoPicker({ onRepoId }) {
       <input
         placeholder="User ID"
         value={userId}
-        onChange={e => setUserId(e.target.value)}
+        onChange={handleUserChange}
         onKeyDown={handleKeyDown}
         style={{ ...inputStyle, width: 200, fontFamily: 'monospace', fontSize: 11 }}
       />
       <button
-        onClick={handleLoad}
+        onClick={() => loadRepos(userId)}
         disabled={!userId.trim() || loading}
         style={{
           ...btnStyle(false),
@@ -63,8 +93,8 @@ export default function RepoPicker({ onRepoId }) {
           <span style={{ fontSize: 11, color: C.textMute }}>No repos</span>
         ) : (
           <select
-            defaultValue=""
-            onChange={e => onRepoId(e.target.value)}
+            value={localStorage.getItem(KEY_REPO) || ''}
+            onChange={handleRepoChange}
             style={{ ...inputStyle, width: 180, cursor: 'pointer' }}
           >
             {repos.length > 1 && <option value="" disabled>Pick a repo…</option>}

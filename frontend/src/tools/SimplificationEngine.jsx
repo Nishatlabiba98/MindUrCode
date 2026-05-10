@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { C } from '../theme';
 import { SAMPLES, LANGUAGES } from '../data/samples';
 import AppShell from '../components/AppShell';
@@ -8,7 +8,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 
 export default function SimplificationEngine() {
@@ -20,6 +20,20 @@ export default function SimplificationEngine() {
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
+
+  useEffect(() => {
+    setFindings([]);
+    setError(null);
+    if (!repoId) return;
+    fetchLatestResults(repoId, 'SIMPLIFICATION')
+      .then(results => {
+        setFindings(results.map(mapToFinding));
+      })
+      .catch((e) => {
+        setFindings([]);
+        setError(e.message || 'Could not load latest results.');
+      });
+  }, [repoId]);
 
   async function handleRun() {
     if (!repoId) return;

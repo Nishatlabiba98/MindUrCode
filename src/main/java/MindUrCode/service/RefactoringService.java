@@ -104,21 +104,15 @@ public class RefactoringService {
                     continue;
                 }
 
-                // Skip if this method has already been analyzed for REFACTORING.
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.REFACTORING);
-
-                if (alreadyAnalyzed) {
-                    continue;
-                }
-
                 // Apply heuristics to decide if this method smells.
                 // If it does, send it to the AI and save the result.
                 if (hasCodeSmell(method)) {
-                    ToolResult result = detectSmells(method.getRawCode(), method, analysisRunId);
-                    allResults.add(result);
+                    try {
+                        ToolResult result = detectSmells(method.getRawCode(), method, analysisRunId);
+                        allResults.add(result);
+                    } catch (Exception e) {
+                        // Skip methods where Ollama fails — return the rest
+                    }
                 }
             }
         }

@@ -58,7 +58,7 @@ export default function LandingPage() {
     <AppShell tab="MindUrCode" url="mindurcode.app">
       <MenuBar />
       <div style={{ flex:1, display:'flex', minHeight:0 }}>
-        <Sidebar activeIdx={0} />
+        <Sidebar />
         <div style={{ flex:1, overflowY:'auto', background:C.bg }}>
           <div style={{ background:C.panel, borderBottom:`1px solid ${C.border}`, padding:'36px 32px 28px' }}>
             <h2 style={{ margin:'0 0 6px', fontSize:20, fontWeight:600, color:C.text }}>MindUrCode</h2>

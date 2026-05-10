@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SAMPLES, LANGUAGES } from '../data/samples';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 import { C, btnStyle } from '../theme';
 
@@ -22,6 +22,33 @@ export default function ClarityScanner() {
   const [showSnippet, setShowSnippet] = useState(false);
   const [snippet, setSnippet] = useState('');
   const sample = SAMPLES[language];
+
+  useEffect(() => {
+    let isActive = true;
+    setError(null);
+    setFindings([]);
+
+    if (!repoId) {
+      return () => {
+        isActive = false;
+      };
+    }
+
+    fetchLatestResults(repoId, 'CLARITY')
+      .then(results => {
+        if (!isActive) return;
+        setFindings(results.map(mapToFinding));
+      })
+      .catch((e) => {
+        if (!isActive) return;
+        setFindings([]);
+        setError(e?.message || 'Failed to load latest CLARITY results.');
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [repoId]);
 
   async function handleRun() {
     if (!repoId) return;
