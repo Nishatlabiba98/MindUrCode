@@ -22,10 +22,17 @@ export default function SimplificationEngine() {
   const sample = SAMPLES[language];
 
   useEffect(() => {
+    setFindings([]);
+    setError(null);
     if (!repoId) return;
     fetchLatestResults(repoId, 'SIMPLIFICATION')
-      .then(results => { if (results.length) setFindings(results.map(mapToFinding)); })
-      .catch(() => {});
+      .then(results => {
+        setFindings(results.map(mapToFinding));
+      })
+      .catch((e) => {
+        setFindings([]);
+        setError(e.message || 'Could not load latest results.');
+      });
   }, [repoId]);
 
   async function handleRun() {
