@@ -26,7 +26,20 @@ export default function SimplificationEngine() {
     if (!repoId) return;
     fetchLatestResults(repoId, 'SIMPLIFICATION')
       .then(results => {
-        setFindings(results.map(mapToFinding).filter(Boolean));
+        const mapped = results.map(mapToFinding).filter(Boolean);
+        if (mapped.length) {
+          setFindings(mapped);
+          return;
+        }
+        // No saved results — auto-run if this tool was queued from the landing page
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('SIMPLIFICATION')) {
+          const updated = pending.filter(t => t !== 'SIMPLIFICATION');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
       })
       .catch((e) => {
         setFindings([]);

@@ -33,6 +33,8 @@ export default function LandingPage() {
     });
   }
 
+  const TOOL_TYPE_MAP = { coverage: 'COVERAGE', clarity: 'CLARITY', docs: 'DOCUMENTATION', refactor: 'REFACTORING', simplify: 'SIMPLIFICATION' };
+
   async function handleRun() {
     if (!name.trim() || !sourcePath.trim() || !userId.trim()) return;
     setError(null);
@@ -42,6 +44,11 @@ export default function LandingPage() {
       const repoId = run.repository?.id || run.repositoryId || run.id;
       localStorage.setItem('mindurcode_repoId', repoId);
       localStorage.setItem('mindurcode_userId', userId.trim());
+
+      // Save selected tools as a pending run queue so each tool page auto-runs on load
+      const pending = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
+      localStorage.setItem('mindurcode_pendingRun', JSON.stringify(pending));
+
       const firstTool = TOOLS.find(t => selected.has(t.id));
       navigate(firstTool?.path || '/coverage');
     } catch (err) {

@@ -37,7 +37,16 @@ export default function ClarityScanner() {
     fetchLatestResults(repoId, 'CLARITY')
       .then(results => {
         if (!isActive) return;
-        setFindings(results.map(mapToFinding).filter(Boolean));
+        const mapped = results.map(mapToFinding).filter(Boolean);
+        if (mapped.length) { setFindings(mapped); return; }
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('CLARITY')) {
+          const updated = pending.filter(t => t !== 'CLARITY');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
       })
       .catch((e) => {
         if (!isActive) return;

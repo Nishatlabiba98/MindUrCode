@@ -24,7 +24,18 @@ export default function RefactoringAdvisor() {
   useEffect(() => {
     if (!repoId) return;
     fetchLatestResults(repoId, 'REFACTORING')
-      .then(results => { if (results.length) setFindings(results.map(mapToFinding).filter(Boolean)); })
+      .then(results => {
+        const mapped = results.map(mapToFinding).filter(Boolean);
+        if (mapped.length) { setFindings(mapped); return; }
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('REFACTORING')) {
+          const updated = pending.filter(t => t !== 'REFACTORING');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
+      })
       .catch(() => {});
   }, [repoId]);
 

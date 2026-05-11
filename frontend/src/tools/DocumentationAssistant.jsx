@@ -24,7 +24,18 @@ export default function DocumentationAssistant() {
   useEffect(() => {
     if (!repoId) return;
     fetchLatestResults(repoId, 'DOCUMENTATION')
-      .then(results => { if (results.length) setFindings(results.map(mapToFinding).filter(Boolean)); })
+      .then(results => {
+        const mapped = results.map(mapToFinding).filter(Boolean);
+        if (mapped.length) { setFindings(mapped); return; }
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('DOCUMENTATION')) {
+          const updated = pending.filter(t => t !== 'DOCUMENTATION');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
+      })
       .catch(() => {});
   }, [repoId]);
 
