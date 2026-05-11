@@ -19,6 +19,7 @@ function FindingRow({ f, onSelect, onAction, selected }) {
   const tag = tagPalette[f.tagColor] || tagPalette.gray;
   const [editing, setEditing] = useState(false);
   const [editedDesc, setEditedDesc] = useState(f.desc);
+  const [expanded, setExpanded] = useState(false);
 
   function handleSave() {
     const updated = { ...f, desc: editedDesc };
@@ -61,8 +62,7 @@ function FindingRow({ f, onSelect, onAction, selected }) {
           </div>
         ) : (
           <>
-            <div style={{ fontSize: 12.5, color: C.textDim, marginBottom: 8 }}>{editedDesc}</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
               <span style={{ padding: '2px 9px', borderRadius: 999, fontSize: 11, background: tag.bg, color: tag.text, border: `1px solid ${tag.border}`, fontWeight: 500 }}>{f.tag}</span>
               {f.actions && f.actions.map((a, i) => (
                 <span key={i}
@@ -75,7 +75,29 @@ function FindingRow({ f, onSelect, onAction, selected }) {
                   {a}
                 </span>
               ))}
+              {editedDesc ? (
+                <span
+                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  style={{ padding: '2px 9px', borderRadius: 6, fontSize: 11, background: C.panel, color: C.textDim, border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer' }}>
+                  {expanded ? '▲ Hide explanation' : '▼ Explanation'}
+                </span>
+              ) : null}
             </div>
+
+            {expanded && editedDesc && (
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{
+                  marginTop: 6, padding: '10px 14px',
+                  background: C.bg, borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  fontSize: 12.5, color: C.textDim,
+                  whiteSpace: 'pre-wrap', lineHeight: 1.7,
+                  fontFamily: 'inherit',
+                }}>
+                {editedDesc}
+              </div>
+            )}
           </>
         )}
       </div>

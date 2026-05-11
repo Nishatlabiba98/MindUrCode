@@ -98,7 +98,7 @@ export default function DocumentationAssistant() {
             lines={[]} totalLines={0}
             rightContent={
               selectedFinding
-                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
+                ? <pre style={preStyle}>{selectedFinding.code || selectedFinding.desc}</pre>
                 : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
             }
           />
