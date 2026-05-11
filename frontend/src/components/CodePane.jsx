@@ -1,8 +1,8 @@
 import React from 'react';
-import { C } from '../theme';
-import { tokColor } from '../syntax';
+import { useTheme } from '../ThemeContext';
+import { makeTokColor } from '../syntax';
 
-function CodeLine({ tokens, bg }) {
+function CodeLine({ tokens, bg, tokColor, C }) {
   return (
     <div style={{
       minHeight: 22, lineHeight: '22px', whiteSpace: 'pre',
@@ -20,6 +20,9 @@ export default function CodePane({
   title, badge, badgeKind, lines, totalLines, actions,
   lineMeta = [], rightContent, rawText, placeholder,
 }) {
+  const { C } = useTheme();
+  const tokColor = makeTokColor(C);
+
   const visibleNums = Array.from({ length: totalLines }, (_, i) => i + 1);
   const rawLines = rawText ? rawText.split('\n') : null;
   const badgePalette = {
@@ -131,7 +134,7 @@ export default function CodePane({
             fontSize: 12.5, lineHeight: '22px', color: C.text,
           }}>
             {lines.map((toks, i) => (
-              <CodeLine key={i} tokens={toks} bg={(lineMeta[i] || {}).bg} />
+              <CodeLine key={i} tokens={toks} bg={(lineMeta[i] || {}).bg} tokColor={tokColor} C={C} />
             ))}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 const NAV = [
   {
@@ -46,9 +46,25 @@ const NAV = [
   },
 ];
 
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
+    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M13.5 10A6 6 0 016 2.5a6 6 0 100 11A6 6 0 0013.5 10z"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export default function Sidebar({ activeIdx }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { C, isDark, toggle } = useTheme();
 
   return (
     <div style={{
@@ -62,12 +78,27 @@ export default function Sidebar({ activeIdx }) {
           <div key={i} onClick={() => navigate(item.path)} style={{
             width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
             borderRadius: 8,
-            background: active ? 'oklch(94% 0.01 260)' : 'transparent',
+            background: active ? C.accentSoft : 'transparent',
             color: active ? C.text : C.textMute,
             cursor: 'pointer',
           }}>{item.icon}</div>
         );
       })}
+
+      {/* Push toggle to bottom */}
+      <div style={{ flex: 1 }} />
+
+      <button
+        onClick={toggle}
+        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        style={{
+          width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 8, border: 'none', cursor: 'pointer',
+          background: 'transparent', color: C.textMute,
+        }}
+      >
+        {isDark ? <SunIcon /> : <MoonIcon />}
+      </button>
     </div>
   );
 }

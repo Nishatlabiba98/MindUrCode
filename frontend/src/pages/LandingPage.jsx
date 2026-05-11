@@ -4,19 +4,20 @@ import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
 import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
-import { C, btnStyle } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { submitRepo, getReposByUser, deleteRepo } from '../api';
 
-const TOOLS = [
-  { id:'coverage', path:'/coverage', label:'Test Coverage',   tag:'COVERAGE', desc:'Finds untested methods and suggests specific test cases.',      color:C.good,      soft:C.goodSoft },
-  { id:'clarity',  path:'/clarity',  label:'Clarity Scanner', tag:'CLARITY',  desc:'Flags confusing names and misleading method implementations.',  color:C.accent,    soft:C.accentSoft },
-  { id:'docs',     path:'/docs',     label:'Documentation',   tag:'DOCS',     desc:'Generates Javadoc for every undocumented class and method.',    color:C.sevBlue,   soft:'oklch(95% 0.03 245)' },
-  { id:'refactor', path:'/refactor', label:'Refactoring',     tag:'REFACTOR', desc:'Detects code smells and suggests actionable refactoring steps.',color:C.warn,      soft:C.warnSoft },
-  { id:'simplify', path:'/simplify', label:'Simplification',  tag:'SIMPLIFY', desc:'Replaces overly nested code with cleaner Java patterns.',       color:C.sevPurple, soft:'oklch(95% 0.03 300)' },
-];
-
 export default function LandingPage() {
+  const { C, btnStyle } = useTheme();
   const navigate = useNavigate();
+
+  const TOOLS = [
+    { id:'coverage', path:'/coverage', label:'Test Coverage',   tag:'COVERAGE', desc:'Finds untested methods and suggests specific test cases.',      color:C.good,      soft:C.goodSoft },
+    { id:'clarity',  path:'/clarity',  label:'Clarity Scanner', tag:'CLARITY',  desc:'Flags confusing names and misleading method implementations.',  color:C.accent,    soft:C.accentSoft },
+    { id:'docs',     path:'/docs',     label:'Documentation',   tag:'DOCS',     desc:'Generates Javadoc for every undocumented class and method.',    color:C.sevBlue,   soft:C.accentSoft },
+    { id:'refactor', path:'/refactor', label:'Refactoring',     tag:'REFACTOR', desc:'Detects code smells and suggests actionable refactoring steps.',color:C.warn,      soft:C.warnSoft },
+    { id:'simplify', path:'/simplify', label:'Simplification',  tag:'SIMPLIFY', desc:'Replaces overly nested code with cleaner Java patterns.',       color:C.sevPurple, soft:C.purpleSoft },
+  ];
   const [name,       setName]       = useState('');
   const [sourcePath, setSourcePath] = useState('');
   const [userId,     setUserId]     = useState(localStorage.getItem('mindurcode_userId') || '');

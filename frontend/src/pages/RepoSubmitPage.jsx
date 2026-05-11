@@ -3,9 +3,10 @@ import { submitRepo } from '../api';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
 import Sidebar from '../components/Sidebar';
-import { C, btnStyle } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function RepoSubmitPage() {
+  const { C, btnStyle } = useTheme();
   const [name, setName] = useState('');
   const [sourcePath, setSourcePath] = useState('');
   const [userId, setUserId] = useState('');

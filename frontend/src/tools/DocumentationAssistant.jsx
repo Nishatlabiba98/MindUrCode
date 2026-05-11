@@ -9,9 +9,10 @@ import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
 import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function DocumentationAssistant() {
+  const { C } = useTheme();
   const [language, setLanguage] = useState('java');
   const [repoId, setRepoId] = useState(localStorage.getItem('mindurcode_repoId') || '');
   const [findings, setFindings] = useState([]);

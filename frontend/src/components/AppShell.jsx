@@ -1,7 +1,8 @@
 import React from 'react';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function AppShell({ children }) {
+  const { C } = useTheme();
   return (
     <div style={{
       width: '100vw', height: '100vh',

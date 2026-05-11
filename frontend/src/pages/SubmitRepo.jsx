@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C, btnStyle } from '../theme';
+import { useTheme } from '../ThemeContext';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
 import Sidebar from '../components/Sidebar';
 import { submitRepo } from '../api';
 
 export default function SubmitRepo() {
+  const { C, btnStyle } = useTheme();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [sourcePath, setSourcePath] = useState('');
@@ -118,6 +119,7 @@ export default function SubmitRepo() {
 }
 
 function Field({ label, placeholder, value, onChange, mono }) {
+  const { C } = useTheme();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label style={{ fontSize: 12, fontWeight: 500, color: C.text }}>{label}</label>
@@ -139,6 +141,7 @@ function Field({ label, placeholder, value, onChange, mono }) {
 }
 
 function Success({ run, onGoToTool }) {
+  const { C, btnStyle } = useTheme();
   return (
     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
       <div style={{

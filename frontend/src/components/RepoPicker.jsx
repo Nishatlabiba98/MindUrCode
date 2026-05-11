@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { C, btnStyle } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { getReposByUser, deleteRepo } from '../api';
 
 const KEY_USER = 'mindurcode_userId';
 const KEY_REPO = 'mindurcode_repoId';
 
 export default function RepoPicker({ onRepoId }) {
+  const { C, btnStyle } = useTheme();
   const [userId, setUserId] = useState('');
   const [repos, setRepos] = useState(null);
   const [selectedRepoId, setSelectedRepoId] = useState(localStorage.getItem(KEY_REPO) || '');

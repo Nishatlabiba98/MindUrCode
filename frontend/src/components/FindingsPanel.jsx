@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { C } from '../theme';
-import { sevColor, tagPalette } from '../syntax';
+import { useTheme } from '../ThemeContext';
+import { makeSevColor, makeTagPalette } from '../syntax';
 
 // -----------------------------------------------------------------
 // Lightweight markdown renderer — no external dependency needed.
 // Handles the patterns Ollama actually produces in its responses.
 // -----------------------------------------------------------------
 
-function renderInline(text) {
+// renderInline accepts C as a parameter since it's a plain function (not a hook)
+function renderInline(text, C) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**'))
@@ -19,6 +20,7 @@ function renderInline(text) {
 }
 
 function MarkdownBlock({ text }) {
+  const { C } = useTheme();
   if (!text) return null;
   const lines = text.split('\n');
   const elements = [];
@@ -31,7 +33,7 @@ function MarkdownBlock({ text }) {
     elements.push(
       <Tag key={elements.length} style={{ margin: '4px 0', paddingLeft: 22 }}>
         {listItems.map((li, i) => (
-          <li key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(li)}</li>
+          <li key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(li, C)}</li>
         ))}
       </Tag>
     );
@@ -50,7 +52,7 @@ function MarkdownBlock({ text }) {
       const size = heading[1].length === 1 ? 14 : 13;
       elements.push(
         <div key={i} style={{ fontSize: size, fontWeight: 700, color: C.text, marginTop: 10, marginBottom: 4, paddingBottom: 3, borderBottom: `1px solid ${C.border}` }}>
-          {renderInline(heading[2])}
+          {renderInline(heading[2], C)}
         </div>
       );
     } else if (bullet) {
@@ -67,7 +69,7 @@ function MarkdownBlock({ text }) {
     } else {
       flushList();
       elements.push(
-        <div key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(line)}</div>
+        <div key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(line, C)}</div>
       );
     }
   });
@@ -76,6 +78,7 @@ function MarkdownBlock({ text }) {
 }
 
 function Tab({ label, active, count, onClick }) {
+  const { C } = useTheme();
   return (
     <div onClick={onClick} style={{
       padding: '12px 4px', marginRight: 22, fontSize: 13,
@@ -89,6 +92,9 @@ function Tab({ label, active, count, onClick }) {
 }
 
 function FindingRow({ f, onSelect, onAction, selected }) {
+  const { C, isDark } = useTheme();
+  const sevColor = makeSevColor(C);
+  const tagPalette = makeTagPalette(isDark);
   const tag = tagPalette[f.tagColor] || tagPalette.gray;
   const [editing, setEditing] = useState(false);
   const [editedDesc, setEditedDesc] = useState(f.desc);
@@ -178,6 +184,7 @@ function FindingRow({ f, onSelect, onAction, selected }) {
 }
 
 export default function FindingsPanel({ tabs, findings, height = 360, onSelect, onAction, selectedId }) {
+  const { C } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   return (
     <div style={{ height, display: 'flex', flexDirection: 'column', background: C.panel }}>
