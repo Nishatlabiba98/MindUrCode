@@ -9,7 +9,9 @@ import MindUrCode.repository.AnalysisRunRepo;
 import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.SourceFileRepo;
 import MindUrCode.repository.RepositoryRepo;
+import MindUrCode.repository.ToolResultRepo;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,17 +30,20 @@ public class RepoIngestionService {
     private final RepositoryRepo repositoryRepo;
     private final JavaParserService javaParserService;
     private final MethodRepo methodRepo;
+    private final ToolResultRepo toolResultRepo;
 
     public RepoIngestionService(SourceFileRepo sourceFileRepo,
                                  AnalysisRunRepo analysisRunRepo,
                                  RepositoryRepo repositoryRepo,
                                  JavaParserService javaParserService,
-                                 MethodRepo methodRepo) {
+                                 MethodRepo methodRepo,
+                                 ToolResultRepo toolResultRepo) {
         this.sourceFileRepo    = sourceFileRepo;
         this.analysisRunRepo   = analysisRunRepo;
         this.repositoryRepo    = repositoryRepo;
         this.javaParserService = javaParserService;
         this.methodRepo        = methodRepo;
+        this.toolResultRepo    = toolResultRepo;
     }
 
     public AnalysisRun ingestRepository(String sourcePath, String name, UUID userId) {
@@ -92,6 +97,25 @@ public class RepoIngestionService {
         }
 
         return run;
+    }
+
+    // ── DELETE REPOSITORY ─────────────────────────
+    // Deletes a repo and all its child data in FK-safe order:
+    // tool_results → methods → source_files → analysis_runs → repository
+    @Transactional
+    public void deleteRepository(UUID repoId) {
+        List<SourceFile> files = sourceFileRepo.findByRepositoryId(repoId);
+        for (SourceFile file : files) {
+            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
+            for (Method method : methods) {
+                toolResultRepo.deleteByMethodId(method.getId());
+            }
+            methodRepo.deleteAll(methods);
+        }
+        sourceFileRepo.deleteAll(files);
+        List<AnalysisRun> runs = analysisRunRepo.findByRepositoryId(repoId);
+        analysisRunRepo.deleteAll(runs);
+        repositoryRepo.deleteById(repoId);
     }
 
     // ── WALK FILES ────────────────────────────────

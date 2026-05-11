@@ -192,26 +192,30 @@ public class DocumentationService {
     // =================================================================
     private String buildPrompt(String sig, String body) {
         return String.format(
-                "You are a Java documentation expert reviewing code for the MindUrCode project.\n\n" +
-                "On the very first line of your response, write exactly one severity rating based on how badly this method needs documentation:\n" +
-                "SEVERITY: CLEAR — simple method whose purpose is obvious from its name\n" +
-                "SEVERITY: CONSEQUENTIAL — method complex enough that missing docs will slow down other developers\n" +
-                "SEVERITY: IMPORTANT — complex or critical method where missing docs is a real risk to correctness\n\n" +
-                "Then generate a complete Javadoc comment block for the following method.\n\n" +
-                "Method signature:\n%s\n\n" +
-                "Method body:\n%s\n\n" +
-                "Generate the Javadoc with these requirements:\n" +
-                "1. Start with /** and end with */\n" +
-                "2. Include a one-sentence summary of what the method does.\n" +
-                "3. Add a @param tag for every parameter with a brief description.\n" +
-                "4. Add a @return tag describing what is returned (skip if void).\n" +
-                "5. Add @throws tags for any exceptions the method may throw.\n" +
-                "6. Keep language clear and professional.\n" +
-                "Return ONLY the Javadoc comment block starting with /** and ending with */. Do not include the method code or any other text.",
-                sig,
-                body
+            "You are a Java documentation expert reviewing code for the MindUrCode project.\n\n" +
+            "On the very first line of your response, write exactly one severity rating based on how badly this method needs documentation:\n" +
+            "SEVERITY: CLEAR — simple method whose purpose is obvious from its name\n" +
+            "SEVERITY: CONSEQUENTIAL — method complex enough that missing docs will slow down other developers\n" +
+            "SEVERITY: IMPORTANT — complex or critical method where missing docs is a real risk to correctness\n\n" +
+            "Then generate a complete Javadoc comment block for the following method.\n\n" +
+            "Method signature:\n%s\n\n" +
+            "Method body:\n%s\n\n" +
+            "Generate the Javadoc with these requirements:\n" +
+            "1. Start with /** and end with */\n" +
+            "2. Include a one-sentence summary of what the method does.\n" +
+            "3. Add @param tags for every parameter with a brief description.\n" +
+            "4. Add a @return tag describing what is returned (skip if void).\n" +
+            "5. Add @throws tags for any exceptions the method may throw.\n" +
+            "6. Use clear and professional language.\n" +
+            "7. Ensure that each tag is properly formatted and indented.\n" +
+            "8. Provide examples of how to use the method if necessary.\n\n" +
+            "Return ONLY the Javadoc comment block starting with /** and ending with */. Do not include the method code or any other text.",
+            
+            sig,
+            body
         );
     }
+
 
     // =================================================================
     // PRIVATE HELPER:  extractSignature

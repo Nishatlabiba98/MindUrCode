@@ -46,6 +46,11 @@ export async function rejectResult(id) {
   return res.json();
 }
 
+export async function deleteRepo(repoId) {
+  const res = await fetch(`${BASE}/repositories/${repoId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+}
+
 // Splits an AI response into a severity rating, a code block, and a plain-English explanation.
 // Tries three formats in order for the code block:
 //   1. Fenced code block  (```java ... ```)  — used by most tools

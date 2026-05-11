@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
 import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
 import { C, btnStyle } from '../theme';
-import { submitRepo } from '../api';
+import { submitRepo, getReposByUser, deleteRepo } from '../api';
 
 const TOOLS = [
   { id:'coverage', path:'/coverage', label:'Test Coverage',   tag:'COVERAGE', desc:'Finds untested methods and suggests specific test cases.',      color:C.good,      soft:C.goodSoft },
@@ -23,6 +23,39 @@ export default function LandingPage() {
   const [selected,   setSelected]   = useState(new Set(['coverage']));
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
+  const [repos,      setRepos]      = useState([]);
+  const [reposLoading, setReposLoading] = useState(false);
+
+  // Load user repos on mount if we have a saved userId
+  useEffect(() => {
+    const savedUser = localStorage.getItem('mindurcode_userId');
+    if (savedUser) loadUserRepos(savedUser);
+  }, []);
+
+  async function loadUserRepos(uid) {
+    if (!uid || !uid.trim()) return;
+    setReposLoading(true);
+    try {
+      const data = await getReposByUser(uid.trim());
+      setRepos(data || []);
+    } catch {
+      setRepos([]);
+    } finally {
+      setReposLoading(false);
+    }
+  }
+
+  async function handleDelete(repoId) {
+    try {
+      await deleteRepo(repoId);
+      setRepos(prev => prev.filter(r => r.id !== repoId));
+      if (localStorage.getItem('mindurcode_repoId') === repoId) {
+        localStorage.removeItem('mindurcode_repoId');
+      }
+    } catch {
+      // silently ignore — repo list will stay unchanged
+    }
+  }
 
   function toggleTool(id) {
     setSelected(prev => {
@@ -44,6 +77,7 @@ export default function LandingPage() {
       const repoId = run.repository?.id || run.repositoryId || run.id;
       localStorage.setItem('mindurcode_repoId', repoId);
       localStorage.setItem('mindurcode_userId', userId.trim());
+      loadUserRepos(userId.trim());
 
       // Save selected tools as a pending run queue so each tool page auto-runs on load
       const pending = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
@@ -105,6 +139,43 @@ export default function LandingPage() {
               })}
             </div>
           </div>
+
+          {/* ── Your repositories ─────────────────────────────────── */}
+          {(repos.length > 0 || reposLoading) && (
+            <div style={{ margin:'22px 32px 0', padding:'16px 20px', background:C.panel, border:`1px solid ${C.border}`, borderRadius:10 }}>
+              <p style={{ fontSize:10, fontWeight:600, color:C.textMute, margin:'0 0 10px', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                Your repositories
+              </p>
+              {reposLoading ? (
+                <p style={{ fontSize:12, color:C.textMute, margin:0 }}>Loading…</p>
+              ) : (
+                repos.map((repo, i) => (
+                  <div key={repo.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderTop: i === 0 ? 'none' : `1px solid ${C.border}` }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ fontSize:13, fontWeight:600, color:C.text, margin:'0 0 2px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {repo.name}
+                      </p>
+                      <p style={{ fontSize:11, color:C.textMute, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {repo.sourcePath}
+                      </p>
+                    </div>
+                    {repo.addedAt && (
+                      <span style={{ fontSize:11, color:C.textMute, whiteSpace:'nowrap', flexShrink:0 }}>
+                        {new Date(repo.addedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    <button
+                      title="Delete repository"
+                      onClick={() => handleDelete(repo.id)}
+                      style={{ width:24, height:24, border:'none', borderRadius:5, background:'transparent', color:C.textMute, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, lineHeight:1, padding:0, flexShrink:0 }}
+                      onMouseEnter={e => { e.currentTarget.style.color='oklch(58% 0.21 25)'; e.currentTarget.style.background='oklch(95% 0.02 25)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color=C.textMute; e.currentTarget.style.background='transparent'; }}
+                    >×</button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
           <div style={{ margin:'22px 32px 32px', padding:'16px 20px', background:C.panel, border:`1px solid ${C.border}`, borderRadius:10 }}>
             <p style={{ fontSize:10, fontWeight:600, color:C.textMute, margin:'0 0 12px', textTransform:'uppercase', letterSpacing:'0.06em' }}>How it works</p>

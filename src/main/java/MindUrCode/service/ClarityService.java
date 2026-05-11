@@ -54,7 +54,7 @@ public class ClarityService {
     }
 
     private String buildPrompt(String methodName, String methodBody) {
-        return """
+    return """
                 You are a Java code clarity expert reviewing code for the MindUrCode project.
 
                 On the very first line of your response, write exactly one severity rating based on how much the naming or clarity issue affects the code:
@@ -68,8 +68,20 @@ public class ClarityService {
                 %s
                 Does the method name clearly describe what the code does?
                 Suggest a better name if needed and explain why in one or two sentences.
-                """.formatted(methodName, methodBody);
-    }
+                
+                Specifically, consider these points when evaluating and suggesting changes:
+                1. Clarity of intent: Is it immediately clear from the name what the method is supposed to do?
+                2. Consistency with naming conventions: Does it follow common Java naming patterns (e.g., snake_case for methods)?
+                3. Avoid abbreviations: If abbreviations are used, ensure they are well-known and widely understood.
+                4. Relevance: Ensure that the name accurately reflects the functionality of the method.
+                5. Simplicity: Keep names concise and avoid overly complex or ambiguous terms.
+
+                Return ONLY the revised method name and explanation in the following format:
+                - New Method Name: %s
+                - Reason for Change: %s
+                """.formatted(methodName, methodBody, methodName, "");
+}
+
 
     private ToolResult saveResult(Method method, String aiSuggestion, UUID analysisRunId) {
         ToolResult result = new ToolResult();
