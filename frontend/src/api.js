@@ -54,13 +54,15 @@ export async function rejectResult(id) {
 function parseAiResponse(text) {
   if (!text) return { code: '', explanation: '', severity: 'CLEAR', noIssues: false };
 
-  // Extract severity from the first line (SEVERITY: CLEAR / CONSEQUENTIAL / IMPORTANT)
+  // Extract severity — search the first 300 characters so we catch it even if the model
+  // adds a short preamble before the severity line, or varies the formatting slightly.
   let severity = 'CLEAR';
   let body = text;
-  const sevMatch = text.match(/^SEVERITY:\s*(CLEAR|CONSEQUENTIAL|IMPORTANT)[^\n]*/im);
+  const sevMatch = text.slice(0, 300).match(/SEVERITY:\s*(CLEAR|CONSEQUENTIAL|IMPORTANT)/i);
   if (sevMatch) {
     severity = sevMatch[1].toUpperCase();
-    body = text.replace(/^SEVERITY:\s*(CLEAR|CONSEQUENTIAL|IMPORTANT)[^\n]*\n?/im, '').trim();
+    // Strip the entire severity line from wherever it appeared so it doesn't leak into the display
+    body = text.replace(/[^\n]*SEVERITY:\s*(CLEAR|CONSEQUENTIAL|IMPORTANT)[^\n]*/i, '').trim();
   }
 
   // 1. Fenced code block
