@@ -52,7 +52,12 @@ export async function rejectResult(id) {
 //   2. Javadoc block      (/** ... */)        — used by Documentation tool
 //   3. No block found     — full response goes to explanation, code pane falls back to desc
 function parseAiResponse(text) {
-  if (!text) return { code: '', explanation: '', severity: 'CLEAR' };
+  if (!text) return { code: '', explanation: '', severity: 'CLEAR', noIssues: false };
+
+  // If the model found nothing to report, signal the caller to skip this result
+  if (/^NO_ISSUES\s*$/im.test(text.trim())) {
+    return { code: '', explanation: '', severity: 'CLEAR', noIssues: true };
+  }
 
   // Extract severity from the first line (SEVERITY: CLEAR / CONSEQUENTIAL / IMPORTANT)
   let severity = 'CLEAR';
@@ -80,7 +85,7 @@ function parseAiResponse(text) {
   }
 
   // 3. No recognisable block — show everything as explanation, pane falls back to desc
-  return { code: '', explanation: body.trim(), severity };
+  return { code: '', explanation: body.trim(), severity, noIssues: false };
 }
 
 // Maps a severity string to a dot/tag color
@@ -90,9 +95,11 @@ function severityToColor(severity) {
   return 'blue'; // CLEAR
 }
 
-// Maps a ToolResult from the backend to the FindingsPanel format
+// Maps a ToolResult from the backend to the FindingsPanel format.
+// Returns null if the AI reported no issues — callers should filter these out.
 export function mapToFinding(result) {
-  const { code, explanation, severity } = parseAiResponse(result.aiSuggestion);
+  const { code, explanation, severity, noIssues } = parseAiResponse(result.aiSuggestion);
+  if (noIssues) return null;
   const color = severityToColor(severity);
   return {
     id: result.id,

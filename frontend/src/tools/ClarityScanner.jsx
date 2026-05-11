@@ -37,7 +37,7 @@ export default function ClarityScanner() {
     fetchLatestResults(repoId, 'CLARITY')
       .then(results => {
         if (!isActive) return;
-        setFindings(results.map(mapToFinding));
+        setFindings(results.map(mapToFinding).filter(Boolean));
       })
       .catch((e) => {
         if (!isActive) return;
@@ -56,7 +56,7 @@ export default function ClarityScanner() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'CLARITY');
-      setFindings(results.map(mapToFinding));
+      setFindings(results.map(mapToFinding).filter(Boolean));
     } catch (e) {
       setError(e.message);
     } finally {

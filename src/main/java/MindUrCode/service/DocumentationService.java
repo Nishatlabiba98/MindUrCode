@@ -200,7 +200,8 @@ public class DocumentationService {
                 "Then generate a complete Javadoc comment block for the following method.\n\n" +
                 "Method signature:\n%s\n\n" +
                 "Method body:\n%s\n\n" +
-                "Requirements:\n" +
+                "If the method already has sufficient documentation or is so simple it needs none, respond with exactly: NO_ISSUES\n\n" +
+                "Otherwise, generate the Javadoc with these requirements:\n" +
                 "1. Start with /** and end with */\n" +
                 "2. Include a one-sentence summary of what the method does.\n" +
                 "3. Add a @param tag for every parameter with a brief description.\n" +

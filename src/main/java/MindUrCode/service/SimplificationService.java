@@ -273,10 +273,10 @@ public class SimplificationService {
                 "3. Manual null checks that could use Objects.nonNull in a stream filter.\n" +
                 "4. Intermediate variables that are only used to collect and immediately return.\n" +
                 "5. Unused imports, variables, or methods that add clutter.\n\n" +
-                "For each issue you find:\n" +
+                "If the method has no simplification issues, respond with exactly: NO_ISSUES\n\n" +
+                "Otherwise, for each issue you find:\n" +
                 "- Identify the exact lines affected.\n" +
                 "- Explain the simpler modern Java alternative (e.g., Stream API, for-each, Optional).\n" +
-                "- Describe in plain English what the equivalent simplified code would look like.\n" +
                 "Return ONLY the simplified version of the method as a Java code block. Do not include any explanation outside of brief inline comments on the changed lines.",
                 body
         );

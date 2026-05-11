@@ -82,7 +82,8 @@ public class TestCoverageService {
                 "Method name: %s\n" +
                 "Source lines: %d to %d\n\n" +
                 "Raw code:\n%s\n\n" +
-                "Please do the following:\n" +
+                "If the method is trivial and needs no tests (e.g., a simple getter or one-liner), respond with exactly: NO_ISSUES\n\n" +
+                "Otherwise:\n" +
                 "1. Identify which branches or paths in this method have no tests.\n" +
                 "2. Suggest specific JUnit 5 test cases that would cover the missing paths.\n" +
                 "3. Include edge cases such as null inputs, empty lists, and boundary values.\n" +

@@ -24,7 +24,7 @@ export default function RefactoringAdvisor() {
   useEffect(() => {
     if (!repoId) return;
     fetchLatestResults(repoId, 'REFACTORING')
-      .then(results => { if (results.length) setFindings(results.map(mapToFinding)); })
+      .then(results => { if (results.length) setFindings(results.map(mapToFinding).filter(Boolean)); })
       .catch(() => {});
   }, [repoId]);
 
@@ -34,7 +34,7 @@ export default function RefactoringAdvisor() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'REFACTORING');
-      setFindings(results.map(mapToFinding));
+      setFindings(results.map(mapToFinding).filter(Boolean));
     } catch (e) {
       setError(e.message);
     } finally {
