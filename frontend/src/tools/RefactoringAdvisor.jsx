@@ -64,13 +64,6 @@ export default function RefactoringAdvisor() {
     }
   }
 
-  const preStyle = {
-    margin: 0, padding: '12px 16px',
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: 12.5, color: C.text, whiteSpace: 'pre-wrap',
-  };
-  const placeholderStyle = { padding: 16, color: C.textMute, fontSize: 13 };
-
   return (
     <AppShell tab="MindUrCode — Refactor" url="minduurcode.app/refactor">
       <MenuBar />
@@ -87,20 +80,14 @@ export default function RefactoringAdvisor() {
           <CodePane
             title="Method" badge="Before" badgeKind="neutral"
             lines={[]} totalLines={0}
-            rightContent={
-              methodCode
-                ? <pre style={preStyle}>{methodCode}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the method code.</div>
-            }
+            rawText={methodCode || ''}
+            placeholder="Select a finding below to view the method code."
           />
           <CodePane
             title="AI Suggestion" badge="After" badgeKind="good"
             lines={[]} totalLines={0}
-            rightContent={
-              selectedFinding
-                ? <pre style={preStyle}>{selectedFinding.code || selectedFinding.desc}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
-            }
+            rawText={selectedFinding ? (selectedFinding.code || selectedFinding.desc) : ''}
+            placeholder="Select a finding below to view the suggestion."
           />
         </div>
       </div>

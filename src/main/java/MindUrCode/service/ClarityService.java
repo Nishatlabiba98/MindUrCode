@@ -55,13 +55,19 @@ public class ClarityService {
 
     private String buildPrompt(String methodName, String methodBody) {
         return """
-                You are a Java code clarity expert.
-                Analyze this method:
+                You are a Java code clarity expert reviewing code for the MindUrCode project.
+
+                On the very first line of your response, write exactly one severity rating based on how much the naming or clarity issue affects the code:
+                SEVERITY: CLEAR — name is slightly off but intent is still understandable
+                SEVERITY: CONSEQUENTIAL — misleading name that will slow down developers reading this code
+                SEVERITY: IMPORTANT — name actively contradicts what the method does, creating real risk of misuse
+
+                Then analyze this method:
                 Method name: %s
                 Method body:
                 %s
                 Does the method name clearly describe what the code does?
-                Respond with: CLEAR or UNCLEAR, then one sentence explaining why.
+                Suggest a better name if needed and explain why in one or two sentences.
                 """.formatted(methodName, methodBody);
     }
 

@@ -261,7 +261,11 @@ public class SimplificationService {
     private String buildPrompt(String body) {
         return String.format(
                 "You are a Java simplification expert reviewing code for the MindUrCode project.\n\n" +
-                "Analyze the following Java method for unnecessary complexity:\n\n" +
+                "On the very first line of your response, write exactly one severity rating based on how much this issue affects the code:\n" +
+                "SEVERITY: CLEAR — minor style or readability concern, low impact\n" +
+                "SEVERITY: CONSEQUENTIAL — affects maintainability or testability in a meaningful way\n" +
+                "SEVERITY: IMPORTANT — significant complexity that is likely to cause bugs or serious maintenance problems\n\n" +
+                "Then analyze the following Java method for unnecessary complexity:\n\n" +
                 "%s\n\n" +
                 "Look for these specific issues:\n" +
                 "1. Overly nested conditionals — 3 or more levels of if-inside-if.\n" +
@@ -273,7 +277,7 @@ public class SimplificationService {
                 "- Identify the exact lines affected.\n" +
                 "- Explain the simpler modern Java alternative (e.g., Stream API, for-each, Optional).\n" +
                 "- Describe in plain English what the equivalent simplified code would look like.\n" +
-                "Do not rewrite the code. Describe the changes so the developer can apply them.",
+                "Return ONLY the simplified version of the method as a Java code block. Do not include any explanation outside of brief inline comments on the changed lines.",
                 body
         );
     }

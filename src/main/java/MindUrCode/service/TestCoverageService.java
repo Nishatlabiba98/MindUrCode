@@ -74,6 +74,10 @@ public class TestCoverageService {
     private String buildPrompt(Method method) {
         return String.format(
                 "You are a Java testing expert reviewing code for the MindUrCode project.\n\n" +
+                "On the very first line of your response, write exactly one severity rating based on the risk of having no test coverage for this method:\n" +
+                "SEVERITY: CLEAR — simple method with obvious behaviour that is low risk to leave untested\n" +
+                "SEVERITY: CONSEQUENTIAL — method with branching logic or side effects that should have tests\n" +
+                "SEVERITY: IMPORTANT — critical method where missing tests is a significant risk to correctness\n\n" +
                 "The following Java method has no unit test coverage:\n\n" +
                 "Method name: %s\n" +
                 "Source lines: %d to %d\n\n" +
@@ -83,7 +87,7 @@ public class TestCoverageService {
                 "2. Suggest specific JUnit 5 test cases that would cover the missing paths.\n" +
                 "3. Include edge cases such as null inputs, empty lists, and boundary values.\n" +
                 "4. Keep each test case name descriptive (e.g., methodName_condition_expectedResult).\n" +
-                "Respond in plain English. Do not change the original code.",
+                "Return ONLY the JUnit 5 test methods as a Java code block. No explanation outside of the method names and inline comments.",
                 method.getMethodName(),
                 method.getLineStart(),
                 method.getLineEnd(),

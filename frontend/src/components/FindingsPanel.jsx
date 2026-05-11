@@ -2,6 +2,79 @@ import React, { useState } from 'react';
 import { C } from '../theme';
 import { sevColor, tagPalette } from '../syntax';
 
+// -----------------------------------------------------------------
+// Lightweight markdown renderer — no external dependency needed.
+// Handles the patterns Ollama actually produces in its responses.
+// -----------------------------------------------------------------
+
+function renderInline(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**'))
+      return <strong key={i} style={{ color: C.text, fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith('`') && part.endsWith('`'))
+      return <code key={i} style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11.5, background: C.panelAlt, color: C.accent, padding: '1px 5px', borderRadius: 4 }}>{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
+function MarkdownBlock({ text }) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const elements = [];
+  let listItems = [];
+  let listType = null;
+
+  function flushList() {
+    if (!listItems.length) return;
+    const Tag = listType === 'ol' ? 'ol' : 'ul';
+    elements.push(
+      <Tag key={elements.length} style={{ margin: '4px 0', paddingLeft: 22 }}>
+        {listItems.map((li, i) => (
+          <li key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(li)}</li>
+        ))}
+      </Tag>
+    );
+    listItems = [];
+    listType = null;
+  }
+
+  lines.forEach((line, i) => {
+    const heading = line.match(/^(#{1,3})\s+(.+)/);
+    const bullet  = line.match(/^[-*]\s+(.*)/);
+    const ordered = line.match(/^\d+\.\s+(.*)/);
+    const blank   = line.trim() === '';
+
+    if (heading) {
+      flushList();
+      const size = heading[1].length === 1 ? 14 : 13;
+      elements.push(
+        <div key={i} style={{ fontSize: size, fontWeight: 700, color: C.text, marginTop: 10, marginBottom: 4, paddingBottom: 3, borderBottom: `1px solid ${C.border}` }}>
+          {renderInline(heading[2])}
+        </div>
+      );
+    } else if (bullet) {
+      if (listType === 'ol') flushList();
+      listType = 'ul';
+      listItems.push(bullet[1]);
+    } else if (ordered) {
+      if (listType === 'ul') flushList();
+      listType = 'ol';
+      listItems.push(ordered[1]);
+    } else if (blank) {
+      flushList();
+      elements.push(<div key={i} style={{ height: 6 }} />);
+    } else {
+      flushList();
+      elements.push(
+        <div key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(line)}</div>
+      );
+    }
+  });
+  flushList();
+  return <div>{elements}</div>;
+}
+
 function Tab({ label, active, count, onClick }) {
   return (
     <div onClick={onClick} style={{
@@ -91,11 +164,9 @@ function FindingRow({ f, onSelect, onAction, selected }) {
                   marginTop: 6, padding: '10px 14px',
                   background: C.bg, borderRadius: 6,
                   border: `1px solid ${C.border}`,
-                  fontSize: 12.5, color: C.textDim,
-                  whiteSpace: 'pre-wrap', lineHeight: 1.7,
-                  fontFamily: 'inherit',
+                  fontSize: 12.5,
                 }}>
-                {editedDesc}
+                <MarkdownBlock text={editedDesc} />
               </div>
             )}
           </>
