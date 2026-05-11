@@ -34,21 +34,22 @@ package MindUrCode.service;
 //                                    kept private here too)
 // =====================================================================
 
-import MindUrCode.model.Method;
-import MindUrCode.model.SourceFile;
-import MindUrCode.model.ToolResult;
-import MindUrCode.enums.ResultStatus;
-import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepo;
-import MindUrCode.repository.ToolResultRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import MindUrCode.enums.ResultStatus;
+import MindUrCode.enums.ToolType;
+import MindUrCode.model.Method;
+import MindUrCode.model.SourceFile;
+import MindUrCode.model.ToolResult;
+import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.ToolResultRepo;
 
 @Service
 public class DocumentationService {
@@ -110,17 +111,6 @@ public class DocumentationService {
                     continue; // Already documented — skip
                 }
 
-                // Check if this method has already been analyzed for DOCUMENTATION.
-                // We do not want to send duplicate AI calls.
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.DOCUMENTATION);
-
-                if (alreadyAnalyzed) {
-                    continue;
-                }
-
                 // Build the method signature line for the prompt.
                 // The "signature" is the first line of a method:
                 //   e.g.  "public List<String> getActiveUsers(List<User> users)"
@@ -134,8 +124,12 @@ public class DocumentationService {
                 String signature = extractSignature(rawCode);
 
                 // Call the UML-specified public method to generate the Javadoc.
-                ToolResult result = generateJavadoc(signature, rawCode, method, analysisRunId);
-                allResults.add(result);
+                try {
+                    ToolResult result = generateJavadoc(signature, rawCode, method, analysisRunId);
+                    allResults.add(result);
+                } catch (Exception e) {
+                    // Skip methods where Ollama fails — return the rest
+                }
             }
         }
 
@@ -174,7 +168,6 @@ public class DocumentationService {
     // =================================================================
     public ToolResult generateJavadoc(String sig, String body, Method method, UUID analysisRunId) {
 
-        // Build the AI prompt and send it.
         String prompt       = buildPrompt(sig, body);
         String aiSuggestion = ollamaService.analyze(prompt);
 

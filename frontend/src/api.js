@@ -13,6 +13,18 @@ export async function submitRepo(name, sourcePath, userId) {
   return res.json();
 }
 
+export async function fetchMethod(methodId) {
+  const res = await fetch(`${BASE}/analysis/methods/${methodId}`);
+  if (!res.ok) throw new Error(`Fetch method failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchLatestResults(repoId, toolType) {
+  const res = await fetch(`${BASE}/analysis/results/latest?repoId=${repoId}&toolType=${toolType}`);
+  if (!res.ok) throw new Error(`Fetch latest failed: ${res.status}`);
+  return res.json();
+}
+
 export async function runAnalysis(repoId, toolType) {
   const res = await fetch(
     `${BASE}/analysis/run?repoId=${repoId}&toolType=${toolType}`,
@@ -44,7 +56,7 @@ export function mapToFinding(result) {
     title: `${result.toolType} suggestion`,
     desc: result.aiSuggestion,
     loc: `Method: ${result.methodId}`,
-    actions: result.status === 'PENDING' ? ['Approve', 'Reject'] : [],
+    actions: result.status === 'PENDING' ? ['Approve', 'Edit', 'Reject'] : [],
     _raw: result,
   };
 }

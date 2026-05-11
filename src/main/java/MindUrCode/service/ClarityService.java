@@ -1,5 +1,13 @@
 package MindUrCode.service;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import MindUrCode.enums.ResultStatus;
 import MindUrCode.enums.ToolType;
 import MindUrCode.model.Method;
@@ -7,13 +15,6 @@ import MindUrCode.model.SourceFile;
 import MindUrCode.model.ToolResult;
 import MindUrCode.repository.MethodRepo;
 import MindUrCode.repository.ToolResultRepo;
-import org.springframework.stereotype.Service;
-
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ClarityService {
@@ -35,13 +36,12 @@ public class ClarityService {
         for (SourceFile file : sourceFiles) {
             List<Method> methods = methodRepo.findBySourceFileId(file.getId());
             for (Method method : methods) {
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.CLARITY);
-                if (alreadyAnalyzed) continue;
-                ToolResult result = analyzeMethod(method, analysisRunId);
-                allResults.add(result);
+                try {
+                    ToolResult result = analyzeMethod(method, analysisRunId);
+                    allResults.add(result);
+                } catch (Exception e) {
+                    // Skip methods where Ollama times out or fails — partial results are better than none
+                }
             }
         }
         return allResults;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SAMPLES, LANGUAGES } from '../data/samples';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
@@ -7,16 +7,26 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
+import { C } from '../theme';
 
 export default function DocumentationAssistant() {
   const [language, setLanguage] = useState('java');
-  const [repoId, setRepoId] = useState('');
+  const [repoId, setRepoId] = useState(localStorage.getItem('mindurcode_repoId') || '');
   const [findings, setFindings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedFinding, setSelectedFinding] = useState(null);
+  const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
+
+  useEffect(() => {
+    if (!repoId) return;
+    fetchLatestResults(repoId, 'DOCUMENTATION')
+      .then(results => { if (results.length) setFindings(results.map(mapToFinding)); })
+      .catch(() => {});
+  }, [repoId]);
 
   async function handleRun() {
     if (!repoId) return;
@@ -32,15 +42,34 @@ export default function DocumentationAssistant() {
     }
   }
 
+  async function handleSelect(finding) {
+    setSelectedFinding(finding);
+    try {
+      const method = await fetchMethod(finding._raw.methodId);
+      setMethodCode(method.rawCode || '');
+    } catch (e) {
+      setMethodCode('Could not load method code.');
+    }
+  }
+
   async function handleAction(action, finding) {
     if (action === 'Approve') {
       const updated = await approveResult(finding.id);
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    } else if (action === 'Edit') {
+      setFindings(prev => prev.map(x => x.id === finding.id ? finding : x));
     } else if (action === 'Reject') {
       const updated = await rejectResult(finding.id);
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
     }
   }
+
+  const preStyle = {
+    margin: 0, padding: '12px 16px',
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: 12.5, color: C.text, whiteSpace: 'pre-wrap',
+  };
+  const placeholderStyle = { padding: 16, color: C.textMute, fontSize: 13 };
 
   return (
     <AppShell tab="MindUrCode — Docs" url="minduurcode.app/docs">
@@ -56,20 +85,31 @@ export default function DocumentationAssistant() {
         <Sidebar activeIdx={3} />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           <CodePane
-            title={sample.file} badge="Source" badgeKind="neutral"
-            lines={sample.original} totalLines={sample.lineCount}
+            title="Method" badge="Source" badgeKind="neutral"
+            lines={[]} totalLines={0}
+            rightContent={
+              methodCode
+                ? <pre style={preStyle}>{methodCode}</pre>
+                : <div style={placeholderStyle}>Select a finding below to view the method code.</div>
+            }
           />
           <CodePane
-            title={sample.file.replace(/\.(\w+)$/, '.documented.$1')}
-            badge="With docs" badgeKind="info"
-            lines={sample.original} totalLines={sample.lineCount}
+            title="AI Suggestion" badge="With docs" badgeKind="info"
+            lines={[]} totalLines={0}
+            rightContent={
+              selectedFinding
+                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
+                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
+            }
           />
         </div>
       </div>
       <FindingsPanel
         tabs={[{ label: 'Suggestions', count: findings.length }, { label: 'Inserted', count: 0 }]}
         findings={findings}
+        onSelect={handleSelect}
         onAction={handleAction}
+        selectedId={selectedFinding?.id}
       />
       <StatusBar language={sample.label} file={sample.file} lineCount={sample.lineCount} />
     </AppShell>

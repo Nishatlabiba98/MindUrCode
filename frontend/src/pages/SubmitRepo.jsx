@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { C, btnStyle } from '../theme';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
+import Sidebar from '../components/Sidebar';
 import { submitRepo } from '../api';
 
 export default function SubmitRepo() {
@@ -43,6 +44,8 @@ export default function SubmitRepo() {
         <span style={{ fontFamily: 'monospace' }}>mindurcode.app/repos</span>
       </div>
 
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <Sidebar />
       {/* centered form area */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -108,6 +111,7 @@ export default function SubmitRepo() {
             </>
           )}
         </div>
+      </div>
       </div>
     </AppShell>
   );

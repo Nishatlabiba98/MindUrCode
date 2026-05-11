@@ -40,21 +40,22 @@ package MindUrCode.service;
 //
 // =====================================================================
 
-import MindUrCode.model.Method;
-import MindUrCode.model.SourceFile;
-import MindUrCode.model.ToolResult;
-import MindUrCode.enums.ResultStatus;
-import MindUrCode.enums.ToolType;
-import MindUrCode.repository.MethodRepo;
-import MindUrCode.repository.ToolResultRepo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import MindUrCode.enums.ResultStatus;
+import MindUrCode.enums.ToolType;
+import MindUrCode.model.Method;
+import MindUrCode.model.SourceFile;
+import MindUrCode.model.ToolResult;
+import MindUrCode.repository.MethodRepo;
+import MindUrCode.repository.ToolResultRepo;
 
 // @Service — Spring creates and manages one instance of this class.
 @Service
@@ -107,21 +108,15 @@ public class SimplificationService {
                     continue;
                 }
 
-                // Skip if already analyzed for SIMPLIFICATION.
-                boolean alreadyAnalyzed = toolResultRepo
-                        .findByMethodId(method.getId())
-                        .stream()
-                        .anyMatch(r -> r.getToolType() == ToolType.SIMPLIFICATION);
-
-                if (alreadyAnalyzed) {
-                    continue;
-                }
-
                 // Apply simplicity heuristics.
                 // If the method has complexity issues, send it to the AI.
                 if (needsSimplification(method)) {
-                    ToolResult result = simplify(method.getRawCode(), method, analysisRunId);
-                    allResults.add(result);
+                    try {
+                        ToolResult result = simplify(method.getRawCode(), method, analysisRunId);
+                        allResults.add(result);
+                    } catch (Exception e) {
+                        // Skip methods where Ollama fails — return the rest
+                    }
                 }
             }
         }
@@ -173,7 +168,6 @@ public class SimplificationService {
     // =================================================================
     public ToolResult simplify(String body, Method method, UUID analysisRunId) {
 
-        // Build the prompt and send it to Qwen2.5-Coder via OllamaService.
         String prompt       = buildPrompt(body);
         String aiSuggestion = ollamaService.analyze(prompt);
 

@@ -15,13 +15,23 @@ function Tab({ label, active, count, onClick }) {
   );
 }
 
-function FindingRow({ f }) {
+function FindingRow({ f, onSelect, onAction, selected }) {
   const tag = tagPalette[f.tagColor] || tagPalette.gray;
+  const [editing, setEditing] = useState(false);
+  const [editedDesc, setEditedDesc] = useState(f.desc);
+
+  function handleSave() {
+    const updated = { ...f, desc: editedDesc };
+    onAction && onAction('Edit', updated);
+    setEditing(false);
+  }
+
   return (
-    <div style={{
+    <div onClick={() => !editing && onSelect && onSelect(f)} style={{
       display: 'flex', gap: 14, padding: '14px 18px',
       borderBottom: `1px solid ${C.border}`,
-      alignItems: 'flex-start',
+      alignItems: 'flex-start', cursor: editing ? 'default' : 'pointer',
+      background: selected ? C.accentSoft : 'transparent',
     }}>
       <div style={{
         width: 9, height: 9, borderRadius: '50%',
@@ -29,42 +39,64 @@ function FindingRow({ f }) {
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, color: C.text, fontWeight: 600, marginBottom: 3 }}>{f.title}</div>
-        <div style={{ fontSize: 12.5, color: C.textDim, marginBottom: 8 }}>{f.desc}</div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{
-            padding: '2px 9px', borderRadius: 999, fontSize: 11,
-            background: tag.bg, color: tag.text, border: `1px solid ${tag.border}`,
-            fontWeight: 500,
-          }}>{f.tag}</span>
-          {f.actions && f.actions.map((a, i) => (
-            <span key={i} style={{
-              padding: '2px 9px', borderRadius: 6, fontSize: 11,
-              background: C.panel, color: C.text,
-              border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer',
-            }}>{a}</span>
-          ))}
-        </div>
+
+        {editing ? (
+          <div onClick={e => e.stopPropagation()}>
+            <textarea
+              value={editedDesc}
+              onChange={e => setEditedDesc(e.target.value)}
+              rows={4}
+              style={{
+                width: '100%', fontSize: 12.5, fontFamily: 'inherit',
+                color: C.text, background: C.bg,
+                border: `1px solid ${C.borderStrong}`,
+                borderRadius: 6, padding: '8px 10px',
+                resize: 'vertical', outline: 'none', marginBottom: 8,
+              }}
+            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <span onClick={handleSave} style={{ padding: '2px 10px', borderRadius: 6, fontSize: 11, background: C.text, color: C.panel, fontWeight: 500, cursor: 'pointer' }}>Save</span>
+              <span onClick={() => { setEditing(false); setEditedDesc(f.desc); }} style={{ padding: '2px 10px', borderRadius: 6, fontSize: 11, background: C.panel, color: C.text, border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer' }}>Cancel</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12.5, color: C.textDim, marginBottom: 8 }}>{editedDesc}</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ padding: '2px 9px', borderRadius: 999, fontSize: 11, background: tag.bg, color: tag.text, border: `1px solid ${tag.border}`, fontWeight: 500 }}>{f.tag}</span>
+              {f.actions && f.actions.map((a, i) => (
+                <span key={i}
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (a === 'Edit') { setEditing(true); }
+                    else { onAction && onAction(a, f); }
+                  }}
+                  style={{ padding: '2px 9px', borderRadius: 6, fontSize: 11, background: C.panel, color: C.text, border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer' }}>
+                  {a}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
       </div>
       <div style={{ fontSize: 12, color: C.textMute, whiteSpace: 'nowrap', marginTop: 4 }}>{f.loc}</div>
     </div>
   );
 }
 
-export default function FindingsPanel({ tabs, findings, height = 360 }) {
+export default function FindingsPanel({ tabs, findings, height = 360, onSelect, onAction, selectedId }) {
   const [activeTab, setActiveTab] = useState(0);
   return (
     <div style={{ height, display: 'flex', flexDirection: 'column', background: C.panel }}>
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        padding: '0 18px', borderBottom: `1px solid ${C.border}`, background: C.panel,
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: `1px solid ${C.border}`, background: C.panel }}>
         {tabs.map((t, i) => (
-          <Tab key={i} label={t.label} count={t.count}
-            active={i === activeTab} onClick={() => setActiveTab(i)} />
+          <Tab key={i} label={t.label} count={t.count} active={i === activeTab} onClick={() => setActiveTab(i)} />
         ))}
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {findings.map((f, i) => <FindingRow key={i} f={f} />)}
+        {findings.map((f, i) => (
+          <FindingRow key={i} f={f} onSelect={onSelect} onAction={onAction} selected={f.id === selectedId} />
+        ))}
       </div>
     </div>
   );
