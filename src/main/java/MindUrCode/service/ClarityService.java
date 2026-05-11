@@ -67,8 +67,7 @@ public class ClarityService {
                 Method body:
                 %s
                 Does the method name clearly describe what the code does?
-                If the name is already clear and accurate, respond with exactly: NO_ISSUES
-                Otherwise suggest a better name and explain why in one or two sentences.
+                Suggest a better name if needed and explain why in one or two sentences.
                 """.formatted(methodName, methodBody);
     }
 

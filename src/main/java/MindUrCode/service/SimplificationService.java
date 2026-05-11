@@ -262,7 +262,7 @@ public class SimplificationService {
         return String.format(
                 "You are a Java simplification expert reviewing code for the MindUrCode project.\n\n" +
                 "On the very first line of your response, write exactly one severity rating based on how much this issue affects the code:\n" +
-                "SEVERITY: CLEAR — minor style or readability concern, low impact\n" +
+                "SEVERITY: CLEAR — no style or readability concern\n" +
                 "SEVERITY: CONSEQUENTIAL — affects maintainability or testability in a meaningful way\n" +
                 "SEVERITY: IMPORTANT — significant complexity that is likely to cause bugs or serious maintenance problems\n\n" +
                 "Then analyze the following Java method for unnecessary complexity:\n\n" +
@@ -273,14 +273,15 @@ public class SimplificationService {
                 "3. Manual null checks that could use Objects.nonNull in a stream filter.\n" +
                 "4. Intermediate variables that are only used to collect and immediately return.\n" +
                 "5. Unused imports, variables, or methods that add clutter.\n\n" +
-                "If the method has no simplification issues, respond with exactly: NO_ISSUES\n\n" +
-                "Otherwise, for each issue you find:\n" +
+                "For each issue you find:\n" +
                 "- Identify the exact lines affected.\n" +
                 "- Explain the simpler modern Java alternative (e.g., Stream API, for-each, Optional).\n" +
                 "Return ONLY the simplified version of the method as a Java code block. Do not include any explanation outside of brief inline comments on the changed lines.",
+                
                 body
         );
     }
+
 
     // =================================================================
     // PRIVATE HELPER:  saveResult

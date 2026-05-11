@@ -261,8 +261,7 @@ public class RefactoringService {
                 "3. God object — is this method trying to do too many things?\n" +
                 "4. Feature envy — does it use another class's data more than its own?\n" +
                 "5. Unnecessary complexity — deeply nested conditionals or redundant variables?\n\n" +
-                "If the method has no code smells, respond with exactly: NO_ISSUES\n\n" +
-                "Otherwise, for each smell you find:\n" +
+                "For each smell you find:\n" +
                 "- Name the smell and which lines it appears on.\n" +
                 "- Suggest a specific refactoring technique (e.g., Extract Method, Replace Loop with Stream).\n" +
                 "Return ONLY the refactored Java code block. No preamble, no summary. Use inline comments to mark what changed and why.",
