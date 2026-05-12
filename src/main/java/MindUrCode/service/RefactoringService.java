@@ -248,7 +248,7 @@ public class RefactoringService {
     // =================================================================
     private String buildPrompt(String body) {
         return String.format(
-            "You are a Java refactoring expert reviewing code for the MindUrCode project.\n\n" +
+            "You are a Java refactoring expert reviewing code.\n\n" +
             "On the very first line of your response, write exactly one severity rating based on how much this issue affects the code:\n" +
             "SEVERITY: CLEAR — minor smell, low impact on functionality or maintainability\n" +
             "SEVERITY: CONSEQUENTIAL — smell that meaningfully affects readability, testability, or correctness\n" +

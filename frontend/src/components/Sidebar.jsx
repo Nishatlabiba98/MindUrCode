@@ -38,10 +38,9 @@ const NAV = [
     </svg>,
   },
   {
-    path: '/repos',
+    path: '/dashboard',
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-      <path d="M8 6v4M6 8h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M8 2L2 7h2v6h3v-4h2v4h3V7h2L8 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
     </svg>,
   },
 ];

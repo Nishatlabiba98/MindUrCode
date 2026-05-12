@@ -260,7 +260,7 @@ public class SimplificationService {
     // =================================================================
     private String buildPrompt(String body) {
         return String.format(
-                "You are a Java simplification expert reviewing code for the MindUrCode project.\n\n" +
+                "You are a Java simplification expert reviewing code.\n\n" +
                 "On the very first line of your response, write exactly one severity rating based on how much this issue affects the code:\n" +
                 "SEVERITY: CLEAR — no style or readability concern\n" +
                 "SEVERITY: CONSEQUENTIAL — affects maintainability or testability in a meaningful way\n" +

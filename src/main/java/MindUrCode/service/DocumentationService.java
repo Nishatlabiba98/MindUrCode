@@ -192,7 +192,7 @@ public class DocumentationService {
     // =================================================================
     private String buildPrompt(String sig, String body) {
         return String.format(
-            "You are a Java documentation expert reviewing code for the MindUrCode project.\n\n" +
+            "You are a Java documentation expert reviewing code.\n\n" +
             "On the very first line of your response, write exactly one severity rating based on how badly this method needs documentation:\n" +
             "SEVERITY: CLEAR — simple method whose purpose is obvious from its name\n" +
             "SEVERITY: CONSEQUENTIAL — method complex enough that missing docs will slow down other developers\n" +

@@ -55,7 +55,7 @@ public class ClarityService {
 
     private String buildPrompt(String methodName, String methodBody) {
     return """
-                You are a Java code clarity expert reviewing code for the MindUrCode project.
+                You are a Java code clarity expert reviewing code.
 
                 On the very first line of your response, write exactly one severity rating based on how much the naming or clarity issue affects the code:
                 SEVERITY: CLEAR — name is slightly off but intent is still understandable
