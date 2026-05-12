@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { LIGHT, DARK } from './theme';
 
 const ThemeContext = createContext(null);
@@ -7,6 +7,12 @@ export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(
     () => localStorage.getItem('mindurcode_theme') === 'dark'
   );
+
+  // Mirror the theme onto <html data-theme="…"> so the CSS-variable system
+  // used by Dashboard.css and Landing.css can flip via [data-theme="light"].
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
 
   const toggle = useCallback(() => {
     setIsDark(prev => {

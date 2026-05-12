@@ -1,30 +1,57 @@
-/* Landing page — entry screen with logo + Start button */
-.landing {
-  --bg-0: #04060f;
-  --bg-1: #0a0d1f;
-  --cyan:  #4dd2ff;
-  --blue:  #5b8bff;
-  --purple:#a674ff;
-  --ink:   #e9eefb;
-  --ink-dim:#9aa3bf;
+/* Landing page — entry screen with logo + Start button — themed via CSS vars */
 
+/* Note: shared tokens (--cyan etc) are already declared by Dashboard.css when both
+   pages are routed; redeclaring them here makes Landing self-sufficient too. */
+
+:root, [data-theme="dark"] {
+  --landing-bg-grad:
+    radial-gradient(60% 50% at 30% 35%, rgba(77, 210, 255, 0.10) 0%, rgba(77, 210, 255, 0) 65%),
+    radial-gradient(50% 45% at 70% 65%, rgba(166, 116, 255, 0.10) 0%, rgba(166, 116, 255, 0) 65%),
+    radial-gradient(120% 80% at 50% 50%, #0a0d1f 0%, #04060f 70%, #02030a 100%);
+  --landing-grid: rgba(255,255,255,0.02);
+  --landing-glow-1: rgba(91,139,255,0.35);
+  --landing-glow-2: rgba(166,116,255,0.18);
+  --landing-ink:     #e9eefb;
+  --landing-ink-dim: #9aa3bf;
+  --landing-kbd-bg:     rgba(255,255,255,0.04);
+  --landing-kbd-border: rgba(255,255,255,0.18);
+  --landing-corner:     rgba(154,163,191,0.55);
+  --landing-toggle-bg:  rgba(255,255,255,0.05);
+  --landing-toggle-bd:  rgba(255,255,255,0.18);
+}
+[data-theme="light"] {
+  --landing-bg-grad:
+    radial-gradient(60% 50% at 30% 35%, rgba(77, 210, 255, 0.20) 0%, rgba(77, 210, 255, 0) 65%),
+    radial-gradient(50% 45% at 70% 65%, rgba(166, 116, 255, 0.16) 0%, rgba(166, 116, 255, 0) 65%),
+    radial-gradient(120% 80% at 50% 50%, #ffffff 0%, #eef1f8 70%, #dde2ee 100%);
+  --landing-grid: rgba(20,30,60,0.04);
+  --landing-glow-1: rgba(91,139,255,0.25);
+  --landing-glow-2: rgba(166,116,255,0.14);
+  --landing-ink:     #1a1f33;
+  --landing-ink-dim: #5b6480;
+  --landing-kbd-bg:     rgba(20,30,60,0.04);
+  --landing-kbd-border: rgba(20,30,60,0.18);
+  --landing-corner:     rgba(91,100,128,0.55);
+  --landing-toggle-bg:  rgba(255,255,255,0.85);
+  --landing-toggle-bd:  rgba(20,30,60,0.10);
+}
+
+.landing {
   position: relative;
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
   padding: 60px 24px 80px;
-  color: var(--ink);
+  color: var(--landing-ink);
   font-family: 'Inter', system-ui, sans-serif;
-  background:
-    radial-gradient(60% 50% at 30% 35%, rgba(77, 210, 255, 0.10) 0%, rgba(77, 210, 255, 0) 65%),
-    radial-gradient(50% 45% at 70% 65%, rgba(166, 116, 255, 0.10) 0%, rgba(166, 116, 255, 0) 65%),
-    radial-gradient(120% 80% at 50% 50%, #0a0d1f 0%, #04060f 70%, #02030a 100%);
+  background: var(--landing-bg-grad);
+  transition: background .25s ease, color .25s ease;
 }
 .landing::before {
   content: "";
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    linear-gradient(var(--landing-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--landing-grid) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   pointer-events: none;
@@ -53,7 +80,7 @@
 .landing__logo-wrap::after {
   content: "";
   position: absolute; inset: 8%;
-  background: radial-gradient(closest-side, rgba(91,139,255,0.35), rgba(166,116,255,0.18) 50%, transparent 75%);
+  background: radial-gradient(closest-side, var(--landing-glow-1), var(--landing-glow-2) 50%, transparent 75%);
   filter: blur(28px);
   z-index: 0;
   animation: landing-pulse 4.5s ease-in-out infinite;
@@ -73,7 +100,7 @@
   display: flex; align-items: center; gap: 8px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
-  color: var(--ink-dim);
+  color: var(--landing-ink-dim);
 }
 .landing__meta .dot {
   display: inline-block; width: 6px; height: 6px; border-radius: 50%;
@@ -89,7 +116,7 @@
   letter-spacing: 0.32em; text-transform: uppercase;
   color: #061026;
   text-decoration: none;
-  background: linear-gradient(95deg, var(--cyan) 0%, var(--blue) 55%, var(--purple) 100%);
+  background: linear-gradient(95deg, #4dd2ff 0%, #5b8bff 55%, #a674ff 100%);
   border-radius: 999px;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.18) inset,
@@ -101,7 +128,7 @@
   content: "";
   position: absolute; inset: -2px;
   border-radius: 999px;
-  background: linear-gradient(95deg, var(--cyan), var(--purple));
+  background: linear-gradient(95deg, #4dd2ff, #a674ff);
   filter: blur(14px); opacity: 0.55;
   z-index: -1;
   animation: landing-pulse 3.2s ease-in-out infinite;
@@ -117,18 +144,18 @@
 .landing__hint {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: var(--ink-dim);
+  color: var(--landing-ink-dim);
   opacity: 0.8;
   margin-top: -6px;
 }
 .landing__hint kbd {
   display: inline-block;
   padding: 2px 7px;
-  border: 1px solid rgba(255,255,255,0.18);
+  border: 1px solid var(--landing-kbd-border);
   border-bottom-width: 2px;
   border-radius: 5px;
-  background: rgba(255,255,255,0.04);
-  color: var(--ink);
+  background: var(--landing-kbd-bg);
+  color: var(--landing-ink);
   font: inherit;
   margin: 0 3px;
 }
@@ -138,7 +165,7 @@
   display: flex; justify-content: space-between; gap: 16px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px; letter-spacing: 0.14em;
-  color: rgba(154,163,191,0.55);
+  color: var(--landing-corner);
   text-transform: uppercase;
   pointer-events: none;
 }
@@ -147,3 +174,17 @@
   .landing__corner { position: static; margin: 12px 0 0; justify-content: center; }
   .landing__corner .right { display: none; }
 }
+
+/* ===== Top-right theme toggle pill ===== */
+.landing__toggle {
+  position: fixed; top: 18px; right: 22px; z-index: 5;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px; cursor: pointer;
+  background: var(--landing-toggle-bg);
+  border: 1px solid var(--landing-toggle-bd);
+  color: var(--landing-ink-dim);
+  backdrop-filter: blur(8px);
+  transition: color .15s ease, background .15s ease, transform .15s ease;
+}
+.landing__toggle:hover { color: var(--landing-ink); transform: translateY(-1px); }
