@@ -43,7 +43,7 @@ const ArrowIcon = () => (
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { isDark, toggle } = useTheme();
+  const { isDark, toggle: toggleTheme } = useTheme();
   const [selected, setSelected]     = useState(() => new Set(['coverage']));
   const [repo,     setRepo]         = useState('');
   const [name,     setName]         = useState('');
@@ -179,7 +179,7 @@ export default function Dashboard() {
             <button
               className="icn theme-toggle"
               type="button"
-              onClick={toggle}
+              onClick={toggleTheme}
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               aria-label="Toggle theme"
             >
