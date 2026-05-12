@@ -97,6 +97,12 @@ function severityToColor(severity) {
   return 'blue'; // CLEAR
 }
 
+// Sorts findings by severity: IMPORTANT (red) → CONSEQUENTIAL (orange) → CLEAR (blue)
+const SEV_ORDER = { red: 0, orange: 1, blue: 2 };
+export function sortFindings(findings) {
+  return [...findings].sort((a, b) => (SEV_ORDER[a.sev] ?? 3) - (SEV_ORDER[b.sev] ?? 3));
+}
+
 // Maps a ToolResult from the backend to the FindingsPanel format.
 export function mapToFinding(result) {
   const { code, explanation, severity } = parseAiResponse(result.aiSuggestion);

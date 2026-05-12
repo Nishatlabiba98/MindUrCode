@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 import { useTheme } from '../ThemeContext';
 
@@ -26,7 +26,7 @@ export default function RefactoringAdvisor() {
     if (!repoId) return;
     fetchLatestResults(repoId, 'REFACTORING')
       .then(results => {
-        const mapped = results.map(mapToFinding).filter(Boolean);
+        const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
         if (mapped.length) { setFindings(mapped); return; }
         const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
         if (pending.includes('REFACTORING')) {
@@ -46,7 +46,7 @@ export default function RefactoringAdvisor() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'REFACTORING');
-      setFindings(results.map(mapToFinding).filter(Boolean));
+      setFindings(sortFindings(results.map(mapToFinding).filter(Boolean)));
     } catch (e) {
       setError(e.message);
     } finally {

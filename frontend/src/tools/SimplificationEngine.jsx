@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 
 export default function SimplificationEngine() {
@@ -26,7 +26,7 @@ export default function SimplificationEngine() {
     if (!repoId) return;
     fetchLatestResults(repoId, 'SIMPLIFICATION')
       .then(results => {
-        const mapped = results.map(mapToFinding).filter(Boolean);
+        const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
         if (mapped.length) {
           setFindings(mapped);
           return;
@@ -53,7 +53,7 @@ export default function SimplificationEngine() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'SIMPLIFICATION');
-      setFindings(results.map(mapToFinding).filter(Boolean));
+      setFindings(sortFindings(results.map(mapToFinding).filter(Boolean)));
     } catch (e) {
       setError(e.message);
     } finally {
