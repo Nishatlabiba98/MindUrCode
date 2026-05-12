@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../ThemeContext';
 import { submitRepo, getReposByUser, deleteRepo } from '../api';
 import './Dashboard.css';
 
@@ -27,8 +28,24 @@ const ArrowIcon = () => (
   </svg>
 );
 
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
+    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M13.5 10A6 6 0 016 2.5a6 6 0 100 11A6 6 0 0013.5 10z"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { isDark, toggle } = useTheme();
   const [selected, setSelected]     = useState(() => new Set(['coverage']));
   const [repo,     setRepo]         = useState('');
   const [name,     setName]         = useState('');
@@ -66,7 +83,7 @@ export default function Dashboard() {
     } catch { /* silently ignore */ }
   }
 
-  function toggle(id) {
+  function toggle_tool(id) {
     setSelected(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -159,6 +176,13 @@ export default function Dashboard() {
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
+            </button>
+            <button
+              className="icn"
+              onClick={toggle}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
           </aside>
 
@@ -253,12 +277,12 @@ export default function Dashboard() {
                     className={`dash__tool ${t.id} ${isSelected ? 'selected' : ''}`}
                     onClick={e => {
                       if (e.target.closest('.open')) { navigate(t.route); return; }
-                      toggle(t.id);
+                      toggle_tool(t.id);
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={e => {
-                      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(t.id); }
+                      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle_tool(t.id); }
                     }}
                   >
                     <span className="check" aria-hidden="true"><CheckIcon /></span>
