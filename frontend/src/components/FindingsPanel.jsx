@@ -1,8 +1,84 @@
 import React, { useState } from 'react';
-import { C } from '../theme';
-import { sevColor, tagPalette } from '../syntax';
+import { useTheme } from '../ThemeContext';
+import { makeSevColor, makeTagPalette } from '../syntax';
+
+// -----------------------------------------------------------------
+// Lightweight markdown renderer — no external dependency needed.
+// Handles the patterns Ollama actually produces in its responses.
+// -----------------------------------------------------------------
+
+// renderInline accepts C as a parameter since it's a plain function (not a hook)
+function renderInline(text, C) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**'))
+      return <strong key={i} style={{ color: C.text, fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith('`') && part.endsWith('`'))
+      return <code key={i} style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11.5, background: C.panelAlt, color: C.accent, padding: '1px 5px', borderRadius: 4 }}>{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
+function MarkdownBlock({ text }) {
+  const { C } = useTheme();
+  if (!text) return null;
+  const lines = text.split('\n');
+  const elements = [];
+  let listItems = [];
+  let listType = null;
+
+  function flushList() {
+    if (!listItems.length) return;
+    const Tag = listType === 'ol' ? 'ol' : 'ul';
+    elements.push(
+      <Tag key={elements.length} style={{ margin: '4px 0', paddingLeft: 22 }}>
+        {listItems.map((li, i) => (
+          <li key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(li, C)}</li>
+        ))}
+      </Tag>
+    );
+    listItems = [];
+    listType = null;
+  }
+
+  lines.forEach((line, i) => {
+    const heading = line.match(/^(#{1,3})\s+(.+)/);
+    const bullet  = line.match(/^[-*]\s+(.*)/);
+    const ordered = line.match(/^\d+\.\s+(.*)/);
+    const blank   = line.trim() === '';
+
+    if (heading) {
+      flushList();
+      const size = heading[1].length === 1 ? 14 : 13;
+      elements.push(
+        <div key={i} style={{ fontSize: size, fontWeight: 700, color: C.text, marginTop: 10, marginBottom: 4, paddingBottom: 3, borderBottom: `1px solid ${C.border}` }}>
+          {renderInline(heading[2], C)}
+        </div>
+      );
+    } else if (bullet) {
+      if (listType === 'ol') flushList();
+      listType = 'ul';
+      listItems.push(bullet[1]);
+    } else if (ordered) {
+      if (listType === 'ul') flushList();
+      listType = 'ol';
+      listItems.push(ordered[1]);
+    } else if (blank) {
+      flushList();
+      elements.push(<div key={i} style={{ height: 6 }} />);
+    } else {
+      flushList();
+      elements.push(
+        <div key={i} style={{ lineHeight: 1.7, color: C.textDim }}>{renderInline(line, C)}</div>
+      );
+    }
+  });
+  flushList();
+  return <div>{elements}</div>;
+}
 
 function Tab({ label, active, count, onClick }) {
+  const { C } = useTheme();
   return (
     <div onClick={onClick} style={{
       padding: '12px 4px', marginRight: 22, fontSize: 13,
@@ -16,9 +92,13 @@ function Tab({ label, active, count, onClick }) {
 }
 
 function FindingRow({ f, onSelect, onAction, selected }) {
+  const { C, isDark } = useTheme();
+  const sevColor = makeSevColor(C);
+  const tagPalette = makeTagPalette(isDark);
   const tag = tagPalette[f.tagColor] || tagPalette.gray;
   const [editing, setEditing] = useState(false);
   const [editedDesc, setEditedDesc] = useState(f.desc);
+  const [expanded, setExpanded] = useState(false);
 
   function handleSave() {
     const updated = { ...f, desc: editedDesc };
@@ -61,8 +141,7 @@ function FindingRow({ f, onSelect, onAction, selected }) {
           </div>
         ) : (
           <>
-            <div style={{ fontSize: 12.5, color: C.textDim, marginBottom: 8 }}>{editedDesc}</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
               <span style={{ padding: '2px 9px', borderRadius: 999, fontSize: 11, background: tag.bg, color: tag.text, border: `1px solid ${tag.border}`, fontWeight: 500 }}>{f.tag}</span>
               {f.actions && f.actions.map((a, i) => (
                 <span key={i}
@@ -75,7 +154,27 @@ function FindingRow({ f, onSelect, onAction, selected }) {
                   {a}
                 </span>
               ))}
+              {editedDesc ? (
+                <span
+                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  style={{ padding: '2px 9px', borderRadius: 6, fontSize: 11, background: C.panel, color: C.textDim, border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer' }}>
+                  {expanded ? '▲ Hide explanation' : '▼ Explanation'}
+                </span>
+              ) : null}
             </div>
+
+            {expanded && editedDesc && (
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{
+                  marginTop: 6, padding: '10px 14px',
+                  background: C.bg, borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  fontSize: 12.5,
+                }}>
+                <MarkdownBlock text={editedDesc} />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -84,10 +183,46 @@ function FindingRow({ f, onSelect, onAction, selected }) {
   );
 }
 
-export default function FindingsPanel({ tabs, findings, height = 360, onSelect, onAction, selectedId }) {
+export default function FindingsPanel({ tabs, findings, height: defaultHeight = 360, onSelect, onAction, selectedId }) {
+  const { C } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
+  const [panelHeight, setPanelHeight] = useState(defaultHeight);
+  const [dragging, setDragging] = useState(false);
+
+  function startDrag(e) {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = panelHeight;
+    setDragging(true);
+
+    function onMouseMove(ev) {
+      const delta = startY - ev.clientY; // drag up → taller
+      setPanelHeight(Math.max(120, Math.min(700, startHeight + delta)));
+    }
+
+    function onMouseUp() {
+      setDragging(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
   return (
-    <div style={{ height, display: 'flex', flexDirection: 'column', background: C.panel }}>
+    <div style={{ height: panelHeight, display: 'flex', flexDirection: 'column', background: C.panel, userSelect: dragging ? 'none' : 'auto' }}>
+      {/* Drag handle */}
+      <div
+        onMouseDown={startDrag}
+        style={{
+          height: 5, flexShrink: 0, cursor: 'ns-resize',
+          background: dragging ? C.accent : C.border,
+          transition: dragging ? 'none' : 'background 0.15s',
+        }}
+        onMouseEnter={e => { if (!dragging) e.currentTarget.style.background = C.accent; }}
+        onMouseLeave={e => { if (!dragging) e.currentTarget.style.background = C.border; }}
+      />
       <div style={{ display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: `1px solid ${C.border}`, background: C.panel }}>
         {tabs.map((t, i) => (
           <Tab key={i} label={t.label} count={t.count} active={i === activeTab} onClick={() => setActiveTab(i)} />

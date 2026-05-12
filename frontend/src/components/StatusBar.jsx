@@ -1,10 +1,11 @@
 import React from 'react';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function StatusBar({ language, file, lineCount, parser = 'Parser 4.12', extras }) {
+  const { C } = useTheme();
   return (
     <div style={{
-      height: 30, background: 'oklch(18% 0.02 260)', color: 'oklch(82% 0.01 260)',
+      height: 30, background: C.urlBar, color: C.urlBarText,
       display: 'flex', alignItems: 'center', padding: '0 14px',
       fontSize: 11.5, fontFamily: '"JetBrains Mono", monospace', gap: 18,
     }}>

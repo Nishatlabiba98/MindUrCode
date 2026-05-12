@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './ThemeContext';
 import LandingPage from './pages/LandingPage';
 import SubmitRepo from './pages/SubmitRepo';
 import SimplificationEngine from './tools/SimplificationEngine';
@@ -10,6 +11,7 @@ import RefactoringAdvisor from './tools/RefactoringAdvisor';
 
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/"         element={<LandingPage />} />
@@ -22,5 +24,6 @@ export default function App() {
         <Route path="*"         element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }

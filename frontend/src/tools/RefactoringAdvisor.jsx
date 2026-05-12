@@ -7,11 +7,12 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function RefactoringAdvisor() {
+  const { C } = useTheme();
   const [language, setLanguage] = useState('java');
   const [repoId, setRepoId] = useState(localStorage.getItem('mindurcode_repoId') || '');
   const [findings, setFindings] = useState([]);
@@ -24,7 +25,18 @@ export default function RefactoringAdvisor() {
   useEffect(() => {
     if (!repoId) return;
     fetchLatestResults(repoId, 'REFACTORING')
-      .then(results => { if (results.length) setFindings(results.map(mapToFinding)); })
+      .then(results => {
+        const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
+        if (mapped.length) { setFindings(mapped); return; }
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('REFACTORING')) {
+          const updated = pending.filter(t => t !== 'REFACTORING');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
+      })
       .catch(() => {});
   }, [repoId]);
 
@@ -34,7 +46,7 @@ export default function RefactoringAdvisor() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'REFACTORING');
-      setFindings(results.map(mapToFinding));
+      setFindings(sortFindings(results.map(mapToFinding).filter(Boolean)));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -64,13 +76,6 @@ export default function RefactoringAdvisor() {
     }
   }
 
-  const preStyle = {
-    margin: 0, padding: '12px 16px',
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: 12.5, color: C.text, whiteSpace: 'pre-wrap',
-  };
-  const placeholderStyle = { padding: 16, color: C.textMute, fontSize: 13 };
-
   return (
     <AppShell tab="MindUrCode — Refactor" url="minduurcode.app/refactor">
       <MenuBar />
@@ -87,20 +92,14 @@ export default function RefactoringAdvisor() {
           <CodePane
             title="Method" badge="Before" badgeKind="neutral"
             lines={[]} totalLines={0}
-            rightContent={
-              methodCode
-                ? <pre style={preStyle}>{methodCode}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the method code.</div>
-            }
+            rawText={methodCode || ''}
+            placeholder="Select a finding below to view the method code."
           />
           <CodePane
             title="AI Suggestion" badge="After" badgeKind="good"
             lines={[]} totalLines={0}
-            rightContent={
-              selectedFinding
-                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
-            }
+            rawText={selectedFinding ? (selectedFinding.code || selectedFinding.desc) : ''}
+            placeholder="Select a finding below to view the suggestion."
           />
         </div>
       </div>

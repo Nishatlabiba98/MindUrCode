@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { C } from '../theme';
 import { SAMPLES, LANGUAGES } from '../data/samples';
 import AppShell from '../components/AppShell';
 import MenuBar from '../components/MenuBar';
@@ -8,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 
 export default function SimplificationEngine() {
@@ -27,7 +26,20 @@ export default function SimplificationEngine() {
     if (!repoId) return;
     fetchLatestResults(repoId, 'SIMPLIFICATION')
       .then(results => {
-        setFindings(results.map(mapToFinding));
+        const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
+        if (mapped.length) {
+          setFindings(mapped);
+          return;
+        }
+        // No saved results — auto-run if this tool was queued from the landing page
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('SIMPLIFICATION')) {
+          const updated = pending.filter(t => t !== 'SIMPLIFICATION');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
       })
       .catch((e) => {
         setFindings([]);
@@ -41,7 +53,7 @@ export default function SimplificationEngine() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'SIMPLIFICATION');
-      setFindings(results.map(mapToFinding));
+      setFindings(sortFindings(results.map(mapToFinding).filter(Boolean)));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -71,13 +83,6 @@ export default function SimplificationEngine() {
     }
   }
 
-  const preStyle = {
-    margin: 0, padding: '12px 16px',
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: 12.5, color: C.text, whiteSpace: 'pre-wrap',
-  };
-  const placeholderStyle = { padding: 16, color: C.textMute, fontSize: 13 };
-
   return (
     <AppShell tab="MindUrCode — Simplification" url="minduurcode.app/simplify">
       <MenuBar />
@@ -94,20 +99,14 @@ export default function SimplificationEngine() {
           <CodePane
             title="Method" badge="Original" badgeKind="neutral"
             lines={[]} totalLines={0}
-            rightContent={
-              methodCode
-                ? <pre style={preStyle}>{methodCode}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the method code.</div>
-            }
+            rawText={methodCode || ''}
+            placeholder="Select a finding below to view the method code."
           />
           <CodePane
             title="AI Suggestion" badge="Simplified" badgeKind="good"
             lines={[]} totalLines={0}
-            rightContent={
-              selectedFinding
-                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
-            }
+            rawText={selectedFinding ? (selectedFinding.code || selectedFinding.desc) : ''}
+            placeholder="Select a finding below to view the suggestion."
           />
         </div>
       </div>

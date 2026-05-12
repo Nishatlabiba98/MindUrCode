@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { fetchRepos } from '../api';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function RepoSelector({ repoId, setRepoId }) {
+  const { C } = useTheme();
   const [userId, setUserId] = useState('');
   const [repos, setRepos] = useState([]);
   const [error, setError] = useState(null);

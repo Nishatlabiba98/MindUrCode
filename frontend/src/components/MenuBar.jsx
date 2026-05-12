@@ -1,9 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { C } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function MenuBar() {
   const navigate = useNavigate();
+  const { C } = useTheme();
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 24,

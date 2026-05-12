@@ -7,11 +7,12 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, fetchMethod, fetchLatestResults } from '../api';
+import { runAnalysis, approveResult, rejectResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
-import { C, btnStyle } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 export default function ClarityScanner() {
+  const { C, btnStyle } = useTheme();
   const [language, setLanguage] = useState('java');
   const [repoId, setRepoId] = useState(localStorage.getItem('mindurcode_repoId') || '');
   const [findings, setFindings] = useState([]);
@@ -37,7 +38,16 @@ export default function ClarityScanner() {
     fetchLatestResults(repoId, 'CLARITY')
       .then(results => {
         if (!isActive) return;
-        setFindings(results.map(mapToFinding));
+        const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
+        if (mapped.length) { setFindings(mapped); return; }
+        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
+        if (pending.includes('CLARITY')) {
+          const updated = pending.filter(t => t !== 'CLARITY');
+          updated.length
+            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
+            : localStorage.removeItem('mindurcode_pendingRun');
+          handleRun();
+        }
       })
       .catch((e) => {
         if (!isActive) return;
@@ -56,7 +66,7 @@ export default function ClarityScanner() {
     setError(null);
     try {
       const results = await runAnalysis(repoId, 'CLARITY');
-      setFindings(results.map(mapToFinding));
+      setFindings(sortFindings(results.map(mapToFinding).filter(Boolean)));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -107,9 +117,6 @@ export default function ClarityScanner() {
     }
   }
 
-  const preStyle = { margin:0, padding:'12px 16px', fontFamily:'"JetBrains Mono", monospace', fontSize:12.5, color:C.text, whiteSpace:'pre-wrap' };
-  const placeholderStyle = { padding:16, color:C.textMute, fontSize:13 };
-
   return (
     <AppShell tab="MindUrCode — Clarity" url="minduurcode.app/clarity">
       <MenuBar />
@@ -151,20 +158,14 @@ export default function ClarityScanner() {
           <CodePane
             title="Method" badge={`${findings.length} issues`} badgeKind="warn"
             lines={[]} totalLines={0}
-            rightContent={
-              methodCode
-                ? <pre style={preStyle}>{methodCode}</pre>
-                : <div style={placeholderStyle}>Click "Test a small snippet" or select a finding below.</div>
-            }
+            rawText={methodCode || ''}
+            placeholder='Click "Test a small snippet" or select a finding below.'
           />
           <CodePane
             title="AI Suggestion" badge="Clarity" badgeKind="info"
             lines={[]} totalLines={0}
-            rightContent={
-              selectedFinding
-                ? <pre style={preStyle}>{selectedFinding.desc}</pre>
-                : <div style={placeholderStyle}>Select a finding below to view the suggestion.</div>
-            }
+            rawText={selectedFinding ? (selectedFinding.code || selectedFinding.desc) : ''}
+            placeholder="Select a finding below to view the suggestion."
           />
         </div>
       </div>

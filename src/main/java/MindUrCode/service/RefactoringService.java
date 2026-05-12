@@ -248,23 +248,29 @@ public class RefactoringService {
     // =================================================================
     private String buildPrompt(String body) {
         return String.format(
-                "You are a Java refactoring expert reviewing code for the MindUrCode project.\n\n" +
-                "Analyze the following Java method for code smells:\n\n" +
-                "%s\n\n" +
-                "Check for these specific code smells:\n" +
-                "1. Long method — is it over 15 lines or high cyclomatic complexity?\n" +
-                "2. Duplicate code — is the same logic repeated multiple times?\n" +
-                "3. God object — is this method trying to do too many things?\n" +
-                "4. Feature envy — does it use another class's data more than its own?\n" +
-                "5. Unnecessary complexity — deeply nested conditionals or redundant variables?\n\n" +
-                "For each smell you find:\n" +
-                "- Name the smell and which lines it appears on.\n" +
-                "- Suggest a specific refactoring technique (e.g., Extract Method, Replace Loop with Stream).\n" +
-                "- Explain what the refactored version would look like in plain English.\n" +
-                "Do not rewrite the code. Explain the steps so the developer can apply them.",
-                body
+            "You are a Java refactoring expert reviewing code for the MindUrCode project.\n\n" +
+            "On the very first line of your response, write exactly one severity rating based on how much this issue affects the code:\n" +
+            "SEVERITY: CLEAR — minor smell, low impact on functionality or maintainability\n" +
+            "SEVERITY: CONSEQUENTIAL — smell that meaningfully affects readability, testability, or correctness\n" +
+            "SEVERITY: IMPORTANT — serious smell that is very likely to cause bugs or make the code hard to maintain\n\n" +
+            "Then analyze the following Java method for code smells:\n\n" +
+            "%s\n\n" +
+            "Check for these specific code smells:\n" +
+            "1. Long method — is it over 15 lines or high cyclomatic complexity?\n" +
+            "2. Duplicate code — is the same logic repeated multiple times?\n" +
+            "3. God object — is this method trying to do too many things?\n" +
+            "4. Feature envy — does it use another class's data more than its own?\n" +
+            "5. Unnecessary complexity — deeply nested conditionals or redundant variables?\n\n" +
+            "For each smell you find:\n" +
+            "- Name the smell and which lines it appears on.\n" +
+            "- Suggest a specific refactoring technique (e.g., Extract Method, Replace Loop with Stream).\n" +
+            "- Provide a detailed explanation of why this technique is suitable for addressing the identified smell.\n" +
+            "Return ONLY the refactored Java code block. No preamble or summary. Use inline comments to mark what changed and why.",
+            
+            body
         );
     }
+
 
     // =================================================================
     // PRIVATE HELPER:  saveResult

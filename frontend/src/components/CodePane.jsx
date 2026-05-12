@@ -1,8 +1,8 @@
 import React from 'react';
-import { C } from '../theme';
-import { tokColor } from '../syntax';
+import { useTheme } from '../ThemeContext';
+import { makeTokColor } from '../syntax';
 
-function CodeLine({ tokens, bg }) {
+function CodeLine({ tokens, bg, tokColor, C }) {
   return (
     <div style={{
       minHeight: 22, lineHeight: '22px', whiteSpace: 'pre',
@@ -18,9 +18,13 @@ function CodeLine({ tokens, bg }) {
 
 export default function CodePane({
   title, badge, badgeKind, lines, totalLines, actions,
-  lineMeta = [], rightContent,
+  lineMeta = [], rightContent, rawText, placeholder,
 }) {
+  const { C } = useTheme();
+  const tokColor = makeTokColor(C);
+
   const visibleNums = Array.from({ length: totalLines }, (_, i) => i + 1);
+  const rawLines = rawText ? rawText.split('\n') : null;
   const badgePalette = {
     good:    { bg: C.goodSoft, fg: C.good, br: 'oklch(85% 0.07 145)' },
     warn:    { bg: C.warnSoft, fg: 'oklch(45% 0.13 60)', br: 'oklch(85% 0.07 60)' },
@@ -53,10 +57,47 @@ export default function CodePane({
         {actions}
       </div>
 
-      {rightContent ? (
+      {rawLines ? (
+        /* Raw text mode — splits by line and renders with a proper numbered gutter */
+        <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', background: C.panel }}>
+          <div style={{
+            width: 44, flexShrink: 0,
+            background: C.gutterBg,
+            borderRight: `1px solid ${C.border}`,
+            padding: '12px 0',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: 12, lineHeight: '22px',
+            color: C.gutterText, userSelect: 'none',
+            display: 'flex', flexDirection: 'column',
+            overflowY: 'hidden',
+          }}>
+            {rawLines.map((_, i) => (
+              <div key={i} style={{
+                minHeight: 22, display: 'flex', alignItems: 'flex-start',
+                justifyContent: 'flex-end', paddingRight: 10, paddingTop: 1,
+              }}>
+                {i + 1}
+              </div>
+            ))}
+          </div>
+          <div style={{
+            flex: 1, minWidth: 0, overflow: 'auto', padding: '12px 16px',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: 12.5, color: C.text,
+          }}>
+            {rawLines.map((line, i) => (
+              <div key={i} style={{ minHeight: 22, lineHeight: '22px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                {line || ' '}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : rightContent ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto', background: C.panel }}>
           {rightContent}
         </div>
+      ) : placeholder ? (
+        <div style={{ padding: 16, color: C.textMute, fontSize: 13 }}>{placeholder}</div>
       ) : (
         <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', background: C.panel }}>
           <div style={{
@@ -93,7 +134,7 @@ export default function CodePane({
             fontSize: 12.5, lineHeight: '22px', color: C.text,
           }}>
             {lines.map((toks, i) => (
-              <CodeLine key={i} tokens={toks} bg={(lineMeta[i] || {}).bg} />
+              <CodeLine key={i} tokens={toks} bg={(lineMeta[i] || {}).bg} tokColor={tokColor} C={C} />
             ))}
           </div>
         </div>

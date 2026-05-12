@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,5 +51,12 @@ public class RepositoryController {
         return repositoryRepo.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Delete a repo and all its associated data
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRepo(@PathVariable UUID id) {
+        repoIngestionService.deleteRepository(id);
+        return ResponseEntity.noContent().build();
     }
 }
