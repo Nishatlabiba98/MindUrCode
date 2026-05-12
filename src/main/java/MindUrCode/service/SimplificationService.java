@@ -42,9 +42,11 @@ package MindUrCode.service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -67,14 +69,17 @@ public class SimplificationService {
     private final OllamaService ollamaService;   // sends prompts to AI
     private final MethodRepo methodRepo;          // M's repo — reads methods
     private final ToolResultRepo toolResultRepo;  // M's repo — saves results
+    private final ExecutorService analysisExecutor; // shared 16-thread pool
 
     @Autowired
     public SimplificationService(OllamaService ollamaService,
                                  MethodRepo methodRepo,
-                                 ToolResultRepo toolResultRepo) {
-        this.ollamaService  = ollamaService;
-        this.methodRepo     = methodRepo;
-        this.toolResultRepo = toolResultRepo;
+                                 ToolResultRepo toolResultRepo,
+                                 ExecutorService analysisExecutor) {
+        this.ollamaService     = ollamaService;
+        this.methodRepo        = methodRepo;
+        this.toolResultRepo    = toolResultRepo;
+        this.analysisExecutor  = analysisExecutor;
     }
 
     // =================================================================
@@ -94,34 +99,28 @@ public class SimplificationService {
     // =================================================================
     public List<ToolResult> analyzeSimplification(List<SourceFile> sourceFiles, UUID analysisRunId) {
 
-        List<ToolResult> allResults = new ArrayList<>();
+        // Pre-filter: flatten files → methods, skip test methods, keep only
+        // the ones that trip the complexity heuristic. Then fan-out the rest.
+        List<Method> targets = sourceFiles.stream()
+                .flatMap(f -> methodRepo.findBySourceFileId(f.getId()).stream())
+                .filter(m -> !m.getMethodName().toLowerCase().startsWith("test"))
+                .filter(this::needsSimplification)
+                .toList();
 
-        for (SourceFile file : sourceFiles) {
-
-            // Ask Mahala's MethodRepo for all methods in this file.
-            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-
-            for (Method method : methods) {
-
-                // Skip test methods — we simplify production code only.
-                if (method.getMethodName().toLowerCase().startsWith("test")) {
-                    continue;
-                }
-
-                // Apply simplicity heuristics.
-                // If the method has complexity issues, send it to the AI.
-                if (needsSimplification(method)) {
+        List<CompletableFuture<ToolResult>> futures = targets.stream()
+                .map(method -> CompletableFuture.supplyAsync(() -> {
                     try {
-                        ToolResult result = simplify(method.getRawCode(), method, analysisRunId);
-                        allResults.add(result);
+                        return simplify(method.getRawCode(), method, analysisRunId);
                     } catch (Exception e) {
-                        // Skip methods where Ollama fails — return the rest
+                        return null;
                     }
-                }
-            }
-        }
+                }, analysisExecutor))
+                .toList();
 
-        return allResults;
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     // =================================================================

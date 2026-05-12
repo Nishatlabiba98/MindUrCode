@@ -24,41 +24,21 @@ export default function ClarityScanner() {
   const [snippet, setSnippet] = useState('');
   const sample = SAMPLES[language];
 
+  // Poll for results every 5s while empty — see CoverageAnalyzer for rationale.
   useEffect(() => {
+    if (!repoId || findings.length > 0) return;
     let isActive = true;
-    setError(null);
-    setFindings([]);
-
-    if (!repoId) {
-      return () => {
-        isActive = false;
-      };
-    }
-
-    fetchLatestResults(repoId, 'CLARITY')
+    const tick = () => fetchLatestResults(repoId, 'CLARITY')
       .then(results => {
         if (!isActive) return;
         const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
-        if (mapped.length) { setFindings(mapped); return; }
-        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
-        if (pending.includes('CLARITY')) {
-          const updated = pending.filter(t => t !== 'CLARITY');
-          updated.length
-            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
-            : localStorage.removeItem('mindurcode_pendingRun');
-          handleRun();
-        }
+        if (mapped.length) setFindings(mapped);
       })
-      .catch((e) => {
-        if (!isActive) return;
-        setFindings([]);
-        setError(e?.message || 'Failed to load latest CLARITY results.');
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [repoId]);
+      .catch(() => {});
+    tick();
+    const id = setInterval(tick, 5000);
+    return () => { isActive = false; clearInterval(id); };
+  }, [repoId, findings.length]);
 
   async function handleRun() {
     if (!repoId) return;
@@ -153,7 +133,7 @@ export default function ClarityScanner() {
 
       {error && <div style={{ padding:'4px 12px', fontSize:12, color:'red' }}>{error}</div>}
       <div style={{ flex:1, display:'flex', minHeight:0 }}>
-        <Sidebar activeIdx={2} />
+        <Sidebar />
         <div style={{ flex:1, display:'flex', minWidth:0 }}>
           <CodePane
             title="Method" badge={`${findings.length} issues`} badgeKind="warn"
@@ -170,7 +150,6 @@ export default function ClarityScanner() {
         </div>
       </div>
       <FindingsPanel
-        tabs={[{ label:'Issues', count:findings.length }, { label:'Metrics' }, { label:'History' }]}
         findings={findings}
         onSelect={handleSelect}
         onAction={handleAction}

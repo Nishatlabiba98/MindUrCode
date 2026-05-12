@@ -2,9 +2,11 @@ package MindUrCode.service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.stereotype.Service;
 
@@ -22,29 +24,38 @@ public class ClarityService {
     private final OllamaService ollamaService;
     private final MethodRepo methodRepo;
     private final ToolResultRepo toolResultRepo;
+    private final ExecutorService analysisExecutor;
 
     public ClarityService(OllamaService ollamaService,
                           MethodRepo methodRepo,
-                          ToolResultRepo toolResultRepo) {
-        this.ollamaService  = ollamaService;
-        this.methodRepo     = methodRepo;
-        this.toolResultRepo = toolResultRepo;
+                          ToolResultRepo toolResultRepo,
+                          ExecutorService analysisExecutor) {
+        this.ollamaService     = ollamaService;
+        this.methodRepo        = methodRepo;
+        this.toolResultRepo    = toolResultRepo;
+        this.analysisExecutor  = analysisExecutor;
     }
 
+    // Parallel fan-out — see TestCoverageService for the pattern rationale.
     public List<ToolResult> analyzeClarity(List<SourceFile> sourceFiles, UUID analysisRunId) {
-        List<ToolResult> allResults = new ArrayList<>();
-        for (SourceFile file : sourceFiles) {
-            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-            for (Method method : methods) {
-                try {
-                    ToolResult result = analyzeMethod(method, analysisRunId);
-                    allResults.add(result);
-                } catch (Exception e) {
-                    // Skip methods where Ollama times out or fails — partial results are better than none
-                }
-            }
-        }
-        return allResults;
+        List<Method> targets = sourceFiles.stream()
+                .flatMap(f -> methodRepo.findBySourceFileId(f.getId()).stream())
+                .toList();
+
+        List<CompletableFuture<ToolResult>> futures = targets.stream()
+                .map(method -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return analyzeMethod(method, analysisRunId);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }, analysisExecutor))
+                .toList();
+
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     public ToolResult analyzeMethod(Method method, UUID analysisRunId) {

@@ -20,32 +20,19 @@ export default function SimplificationEngine() {
   const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
 
+  // Poll for results every 5s while empty — see CoverageAnalyzer for rationale.
   useEffect(() => {
-    setFindings([]);
-    setError(null);
-    if (!repoId) return;
-    fetchLatestResults(repoId, 'SIMPLIFICATION')
+    if (!repoId || findings.length > 0) return;
+    const tick = () => fetchLatestResults(repoId, 'SIMPLIFICATION')
       .then(results => {
         const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
-        if (mapped.length) {
-          setFindings(mapped);
-          return;
-        }
-        // No saved results — auto-run if this tool was queued from the landing page
-        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
-        if (pending.includes('SIMPLIFICATION')) {
-          const updated = pending.filter(t => t !== 'SIMPLIFICATION');
-          updated.length
-            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
-            : localStorage.removeItem('mindurcode_pendingRun');
-          handleRun();
-        }
+        if (mapped.length) setFindings(mapped);
       })
-      .catch((e) => {
-        setFindings([]);
-        setError(e.message || 'Could not load latest results.');
-      });
-  }, [repoId]);
+      .catch(() => {});
+    tick();
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, [repoId, findings.length]);
 
   async function handleRun() {
     if (!repoId) return;
@@ -94,7 +81,7 @@ export default function SimplificationEngine() {
       />
       {error && <div style={{ padding: '4px 12px', fontSize: 12, color: 'red' }}>{error}</div>}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <Sidebar activeIdx={0} />
+        <Sidebar />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           <CodePane
             title="Method" badge="Original" badgeKind="neutral"
@@ -111,7 +98,6 @@ export default function SimplificationEngine() {
         </div>
       </div>
       <FindingsPanel
-        tabs={[{ label: 'Suggestions', count: findings.length }, { label: 'Applied', count: 0 }, { label: 'History' }]}
         findings={findings}
         onSelect={handleSelect}
         onAction={handleAction}

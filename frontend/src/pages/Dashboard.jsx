@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { submitRepo, getReposByUser, deleteRepo } from '../api';
+import { submitRepo, getReposByUser, deleteRepo, runAnalysis } from '../api';
 import { useTheme } from '../ThemeContext';
+import {
+  DashboardIcon, CoverageIcon, ClarityIcon, DocsIcon, RefactorIcon, SimplifyIcon,
+  BackIcon, SunIcon, MoonIcon,
+} from '../components/icons';
 import './Dashboard.css';
-
-const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
-    <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"
-      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-  </svg>
-);
-const MoonIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M13 9.5A5.5 5.5 0 1 1 6.5 3a4.5 4.5 0 0 0 6.5 6.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-  </svg>
-);
 
 const TOOLS = [
   { id: 'coverage', badge: 'Coverage', title: 'Test Coverage',   desc: 'Finds untested methods and suggests specific test cases to plug the gaps.',  route: '/coverage' },
@@ -102,8 +93,14 @@ export default function Dashboard() {
       localStorage.setItem('mindurcode_userId', userId.trim());
       loadUserRepos(userId.trim());
 
-      const pending = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
-      localStorage.setItem('mindurcode_pendingRun', JSON.stringify(pending));
+      // Fire every selected tool's /api/analysis/run in parallel — do NOT await.
+      // The backend (with its 16-thread analysisExecutor + Ollama NUM_PARALLEL=4)
+      // chews through them concurrently while we navigate the user to the first
+      // tool's page, where the 5-second poll picks up findings as they're saved.
+      const toolTypes = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
+      toolTypes.forEach(t =>
+        runAnalysis(repoId, t).catch(err => console.warn(`${t} run failed:`, err))
+      );
 
       const first = TOOLS.find(t => selected.has(t.id));
       navigate(first?.route || '/coverage');
@@ -133,47 +130,30 @@ export default function Dashboard() {
 
         {/* ── Body ── */}
         <div className="dash__body">
-          {/* Sidebar */}
+          {/* Sidebar — uses the same canonical icon set as the tool-page Sidebar
+              (see components/icons.jsx). One icon per concept, no overlap. */}
           <aside className="dash__sidebar">
             <button className="icn active" title="Dashboard" type="button">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-                <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-              </svg>
+              <DashboardIcon />
             </button>
             <button className="icn" title="Coverage" type="button" onClick={() => navigate('/coverage')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 4h10M3 8h7M3 12h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
+              <CoverageIcon />
             </button>
             <button className="icn" title="Clarity" type="button" onClick={() => navigate('/clarity')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="7" cy="7" r="4" stroke="currentColor" strokeWidth="1.4"/>
-                <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
+              <ClarityIcon />
             </button>
             <button className="icn" title="Docs" type="button" onClick={() => navigate('/docs')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
+              <DocsIcon />
             </button>
             <button className="icn" title="Refactor" type="button" onClick={() => navigate('/refactor')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h9M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <RefactorIcon />
             </button>
             <button className="icn" title="Simplify" type="button" onClick={() => navigate('/simplify')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 4h10M3 8h7M3 12h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
+              <SimplifyIcon />
             </button>
             <div className="sep" />
             <button className="icn" title="Back to start" type="button" onClick={() => navigate('/')}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <BackIcon />
             </button>
             <div className="dash__sidebar-spacer" />
             <button

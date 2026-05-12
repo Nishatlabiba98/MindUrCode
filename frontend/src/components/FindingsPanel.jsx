@@ -183,7 +183,15 @@ function FindingRow({ f, onSelect, onAction, selected }) {
   );
 }
 
-export default function FindingsPanel({ tabs, findings, height: defaultHeight = 360, onSelect, onAction, selectedId }) {
+// Standardized status tabs — replace the per-tool ad-hoc labels.
+// All five tool pages now share the same Pending / Approved / Rejected filter.
+const STATUS_TABS = [
+  { key: 'PENDING',  label: 'Pending'  },
+  { key: 'APPROVED', label: 'Approved' },
+  { key: 'REJECTED', label: 'Rejected' },
+];
+
+export default function FindingsPanel({ findings, height: defaultHeight = 360, onSelect, onAction, selectedId }) {
   const { C } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [panelHeight, setPanelHeight] = useState(defaultHeight);
@@ -224,14 +232,27 @@ export default function FindingsPanel({ tabs, findings, height: defaultHeight = 
         onMouseLeave={e => { if (!dragging) e.currentTarget.style.background = C.border; }}
       />
       <div style={{ display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: `1px solid ${C.border}`, background: C.panel }}>
-        {tabs.map((t, i) => (
-          <Tab key={i} label={t.label} count={t.count} active={i === activeTab} onClick={() => setActiveTab(i)} />
-        ))}
+        {STATUS_TABS.map((t, i) => {
+          // Findings without a backend status (e.g. the ClarityScanner snippet stub)
+          // default to PENDING so they remain visible somewhere.
+          const count = findings.filter(f => (f._raw?.status || 'PENDING') === t.key).length;
+          return (
+            <Tab
+              key={t.key}
+              label={t.label}
+              count={count}
+              active={i === activeTab}
+              onClick={() => setActiveTab(i)}
+            />
+          );
+        })}
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {findings.map((f, i) => (
-          <FindingRow key={i} f={f} onSelect={onSelect} onAction={onAction} selected={f.id === selectedId} />
-        ))}
+        {findings
+          .filter(f => (f._raw?.status || 'PENDING') === STATUS_TABS[activeTab].key)
+          .map((f, i) => (
+            <FindingRow key={f.id ?? i} f={f} onSelect={onSelect} onAction={onAction} selected={f.id === selectedId} />
+          ))}
       </div>
     </div>
   );

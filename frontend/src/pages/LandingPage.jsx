@@ -5,7 +5,7 @@ import MenuBar from '../components/MenuBar';
 import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
 import { useTheme } from '../ThemeContext';
-import { submitRepo, getReposByUser, deleteRepo } from '../api';
+import { submitRepo, getReposByUser, deleteRepo, runAnalysis } from '../api';
 
 export default function LandingPage() {
   const { C, btnStyle } = useTheme();
@@ -80,9 +80,13 @@ export default function LandingPage() {
       localStorage.setItem('mindurcode_userId', userId.trim());
       loadUserRepos(userId.trim());
 
-      // Save selected tools as a pending run queue so each tool page auto-runs on load
-      const pending = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
-      localStorage.setItem('mindurcode_pendingRun', JSON.stringify(pending));
+      // Fire every selected tool's /api/analysis/run in parallel — do NOT await.
+      // The backend (with its 16-thread analysisExecutor + Ollama NUM_PARALLEL=4)
+      // chews through them concurrently while the tool pages poll for results.
+      const toolTypes = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
+      toolTypes.forEach(t =>
+        runAnalysis(repoId, t).catch(err => console.warn(`${t} run failed:`, err))
+      );
 
       const firstTool = TOOLS.find(t => selected.has(t.id));
       navigate(firstTool?.path || '/coverage');

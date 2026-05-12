@@ -40,7 +40,7 @@ export default function RepoSubmitPage() {
     <AppShell>
       <MenuBar />
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <Sidebar activeIdx={5} />
+        <Sidebar />
         <div style={{ padding: 32, maxWidth: 480 }}>
         <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600 }}>Submit Repository</h2>
         <label style={{ fontSize: 12, color: C.textDim, display: 'block', marginBottom: 4 }}>Repo Name</label>

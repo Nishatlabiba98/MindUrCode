@@ -1,65 +1,26 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
+import {
+  DashboardIcon, CoverageIcon, ClarityIcon, DocsIcon, RefactorIcon, SimplifyIcon,
+  SunIcon, MoonIcon,
+} from './icons';
 
+// Dashboard sits FIRST and uses the 4-square-grid icon — same icon, same
+// meaning on both the Dashboard page and every tool page. Each tool below it
+// has a unique, distinct icon (see icons.jsx). No icon is reused for two
+// concepts anywhere in the app.
 const NAV = [
-  {
-    path: '/simplify',
-    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-      <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-      <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-      <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
-    </svg>,
-  },
-  {
-    path: '/coverage',
-    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 4h10M3 8h7M3 12h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>,
-  },
-  {
-    path: '/clarity',
-    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="7" cy="7" r="4" stroke="currentColor" strokeWidth="1.4"/>
-      <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>,
-  },
-  {
-    path: '/docs',
-    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-    </svg>,
-  },
-  {
-    path: '/refactor',
-    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 8h9M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>,
-  },
-  {
-    path: '/dashboard',
-    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M8 2L2 7h2v6h3v-4h2v4h3V7h2L8 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-    </svg>,
-  },
+  { path: '/dashboard', title: 'Dashboard', icon: <DashboardIcon /> },
+  { path: '/coverage',  title: 'Coverage',  icon: <CoverageIcon /> },
+  { path: '/clarity',   title: 'Clarity',   icon: <ClarityIcon /> },
+  { path: '/docs',      title: 'Docs',      icon: <DocsIcon /> },
+  { path: '/refactor',  title: 'Refactor',  icon: <RefactorIcon /> },
+  { path: '/simplify',  title: 'Simplify',  icon: <SimplifyIcon /> },
 ];
 
-const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
-    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
-      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M13.5 10A6 6 0 016 2.5a6 6 0 100 11A6 6 0 0013.5 10z"
-      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
+// `activeIdx` is still accepted for backward compatibility but is no longer
+// needed — the active state is derived from the URL by default.
 export default function Sidebar({ activeIdx }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -74,13 +35,20 @@ export default function Sidebar({ activeIdx }) {
       {NAV.map((item, i) => {
         const active = activeIdx !== undefined ? i === activeIdx : location.pathname === item.path;
         return (
-          <div key={i} onClick={() => navigate(item.path)} style={{
-            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8,
-            background: active ? C.accentSoft : 'transparent',
-            color: active ? C.text : C.textMute,
-            cursor: 'pointer',
-          }}>{item.icon}</div>
+          <div
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            title={item.title}
+            style={{
+              width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8,
+              background: active ? C.accentSoft : 'transparent',
+              color: active ? C.text : C.textMute,
+              cursor: 'pointer',
+            }}
+          >
+            {item.icon}
+          </div>
         );
       })}
 

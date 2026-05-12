@@ -22,23 +22,19 @@ export default function DocumentationAssistant() {
   const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
 
+  // Poll for results every 5s while empty — see CoverageAnalyzer for rationale.
   useEffect(() => {
-    if (!repoId) return;
-    fetchLatestResults(repoId, 'DOCUMENTATION')
+    if (!repoId || findings.length > 0) return;
+    const tick = () => fetchLatestResults(repoId, 'DOCUMENTATION')
       .then(results => {
         const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
-        if (mapped.length) { setFindings(mapped); return; }
-        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
-        if (pending.includes('DOCUMENTATION')) {
-          const updated = pending.filter(t => t !== 'DOCUMENTATION');
-          updated.length
-            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
-            : localStorage.removeItem('mindurcode_pendingRun');
-          handleRun();
-        }
+        if (mapped.length) setFindings(mapped);
       })
       .catch(() => {});
-  }, [repoId]);
+    tick();
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, [repoId, findings.length]);
 
   async function handleRun() {
     if (!repoId) return;
@@ -87,7 +83,7 @@ export default function DocumentationAssistant() {
       />
       {error && <div style={{ padding: '4px 12px', fontSize: 12, color: 'red' }}>{error}</div>}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <Sidebar activeIdx={3} />
+        <Sidebar />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           <CodePane
             title="Method" badge="Source" badgeKind="neutral"
@@ -104,7 +100,6 @@ export default function DocumentationAssistant() {
         </div>
       </div>
       <FindingsPanel
-        tabs={[{ label: 'Suggestions', count: findings.length }, { label: 'Inserted', count: 0 }]}
         findings={findings}
         onSelect={handleSelect}
         onAction={handleAction}

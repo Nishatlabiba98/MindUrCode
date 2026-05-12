@@ -4,7 +4,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,36 +26,44 @@ public class TestCoverageService {
     private final OllamaService ollamaService;
     private final MethodRepo methodRepo;
     private final ToolResultRepo toolResultRepo;
+    private final ExecutorService analysisExecutor;
 
     @Autowired
     public TestCoverageService(OllamaService ollamaService,
                                MethodRepo methodRepo,
-                               ToolResultRepo toolResultRepo) {
-        this.ollamaService  = ollamaService;
-        this.methodRepo     = methodRepo;
-        this.toolResultRepo = toolResultRepo;
+                               ToolResultRepo toolResultRepo,
+                               ExecutorService analysisExecutor) {
+        this.ollamaService     = ollamaService;
+        this.methodRepo        = methodRepo;
+        this.toolResultRepo    = toolResultRepo;
+        this.analysisExecutor  = analysisExecutor;
     }
 
+    // Parallel fan-out: every untested method becomes a CompletableFuture on
+    // the shared analysisExecutor (16 threads). Ollama's NUM_PARALLEL=4 still
+    // serializes inference, but threads stay busy while waiting and DB saves
+    // overlap with the next method's Ollama call.
     public List<ToolResult> analyzeCoverage(List<SourceFile> sourceFiles, UUID analysisRunId) {
-        List<ToolResult> allResults = new ArrayList<>();
+        List<Method> targets = sourceFiles.stream()
+                .flatMap(f -> findUntested(methodRepo.findBySourceFileId(f.getId())).stream())
+                .toList();
 
-        for (SourceFile file : sourceFiles) {
-            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-            List<Method> untestedMethods = findUntested(methods);
+        List<CompletableFuture<ToolResult>> futures = targets.stream()
+                .map(method -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        String prompt       = buildPrompt(method);
+                        String aiSuggestion = ollamaService.analyze(prompt);
+                        return saveResult(method, aiSuggestion, analysisRunId);
+                    } catch (Exception e) {
+                        return null;  // existing per-method resilience
+                    }
+                }, analysisExecutor))
+                .toList();
 
-            for (Method method : untestedMethods) {
-                try {
-                    String prompt       = buildPrompt(method);
-                    String aiSuggestion = ollamaService.analyze(prompt);
-                    ToolResult result   = saveResult(method, aiSuggestion, analysisRunId);
-                    allResults.add(result);
-                } catch (Exception e) {
-                    // Skip methods where Ollama fails — return the rest
-                }
-            }
-        }
-
-        return allResults;
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     public List<Method> findUntested(List<Method> methods) {

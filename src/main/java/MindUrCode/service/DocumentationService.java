@@ -36,9 +36,11 @@ package MindUrCode.service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -63,16 +65,19 @@ public class DocumentationService {
     private final OllamaService ollamaService;    // sends prompts to the AI
     private final MethodRepo methodRepo;           // M's repo — reads methods
     private final ToolResultRepo toolResultRepo;   // M's repo — saves results
+    private final ExecutorService analysisExecutor; // shared 16-thread pool from AsyncConfig
 
     // @Autowired on the constructor tells Spring:
-    // "Fill in these three parameters automatically when creating this class."
+    // "Fill in these parameters automatically when creating this class."
     @Autowired
     public DocumentationService(OllamaService ollamaService,
                                 MethodRepo methodRepo,
-                                ToolResultRepo toolResultRepo) {
-        this.ollamaService  = ollamaService;
-        this.methodRepo     = methodRepo;
-        this.toolResultRepo = toolResultRepo;
+                                ToolResultRepo toolResultRepo,
+                                ExecutorService analysisExecutor) {
+        this.ollamaService     = ollamaService;
+        this.methodRepo        = methodRepo;
+        this.toolResultRepo    = toolResultRepo;
+        this.analysisExecutor  = analysisExecutor;
     }
 
     // =================================================================
@@ -94,46 +99,36 @@ public class DocumentationService {
     // =================================================================
     public List<ToolResult> analyzeDocumentation(List<SourceFile> sourceFiles, UUID analysisRunId) {
 
-        List<ToolResult> allResults = new ArrayList<>();
+        // Pre-filter step: flatten files → methods, drop the ones that already
+        // have a Javadoc comment. Same logic as before, just expressed as a
+        // stream so we can hand the final list to the executor.
+        List<Method> targets = sourceFiles.stream()
+                .flatMap(f -> methodRepo.findBySourceFileId(f.getId()).stream())
+                .filter(m -> {
+                    String raw = m.getRawCode();
+                    return raw == null || !raw.trim().startsWith("/**");
+                })
+                .toList();
 
-        for (SourceFile file : sourceFiles) {
+        // Fan-out: every undocumented method becomes a CompletableFuture on
+        // the shared analysisExecutor (16 threads). Ollama still serializes
+        // inference at its NUM_PARALLEL ceiling (4), but our threads stay
+        // busy while waiting and DB saves overlap.
+        List<CompletableFuture<ToolResult>> futures = targets.stream()
+                .map(method -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        String signature = extractSignature(method.getRawCode());
+                        return generateJavadoc(signature, method.getRawCode(), method, analysisRunId);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }, analysisExecutor))
+                .toList();
 
-            // Load all methods in this file using M's MethodRepo.
-            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-
-            for (Method method : methods) {
-
-                // Skip methods that already have a Javadoc comment.
-                // rawCode is the full source text of the method.
-                // If it starts with "/**", a Javadoc block is already there.
-                String rawCode = method.getRawCode();
-                if (rawCode != null && rawCode.trim().startsWith("/**")) {
-                    continue; // Already documented — skip
-                }
-
-                // Build the method signature line for the prompt.
-                // The "signature" is the first line of a method:
-                //   e.g.  "public List<String> getActiveUsers(List<User> users)"
-                // We extract it by grabbing everything up to the opening brace "{".
-                //
-                // NOTE ON indexOf('{') :
-                //   String.indexOf(char) returns the position of the first
-                //   occurrence of that character. If not found, returns -1.
-                //   substring(0, index) extracts characters from 0 up to (not
-                //   including) that index.
-                String signature = extractSignature(rawCode);
-
-                // Call the UML-specified public method to generate the Javadoc.
-                try {
-                    ToolResult result = generateJavadoc(signature, rawCode, method, analysisRunId);
-                    allResults.add(result);
-                } catch (Exception e) {
-                    // Skip methods where Ollama fails — return the rest
-                }
-            }
-        }
-
-        return allResults;
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     // =================================================================

@@ -37,9 +37,11 @@ package MindUrCode.service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -63,14 +65,17 @@ public class RefactoringService {
     private final OllamaService ollamaService;   // AI communication
     private final MethodRepo methodRepo;          // M's repo — reads methods
     private final ToolResultRepo toolResultRepo;  // M's repo — saves results
+    private final ExecutorService analysisExecutor; // shared 16-thread pool
 
     @Autowired
     public RefactoringService(OllamaService ollamaService,
                               MethodRepo methodRepo,
-                              ToolResultRepo toolResultRepo) {
-        this.ollamaService  = ollamaService;
-        this.methodRepo     = methodRepo;
-        this.toolResultRepo = toolResultRepo;
+                              ToolResultRepo toolResultRepo,
+                              ExecutorService analysisExecutor) {
+        this.ollamaService     = ollamaService;
+        this.methodRepo        = methodRepo;
+        this.toolResultRepo    = toolResultRepo;
+        this.analysisExecutor  = analysisExecutor;
     }
 
     // =================================================================
@@ -90,34 +95,29 @@ public class RefactoringService {
     // =================================================================
     public List<ToolResult> analyzeRefactoring(List<SourceFile> sourceFiles, UUID analysisRunId) {
 
-        List<ToolResult> allResults = new ArrayList<>();
+        // Pre-filter: flatten files → methods, skip test methods, keep only
+        // the ones that trip our code-smell heuristic. Then fan-out the rest
+        // onto the shared analysisExecutor.
+        List<Method> targets = sourceFiles.stream()
+                .flatMap(f -> methodRepo.findBySourceFileId(f.getId()).stream())
+                .filter(m -> !m.getMethodName().toLowerCase().startsWith("test"))
+                .filter(this::hasCodeSmell)
+                .toList();
 
-        for (SourceFile file : sourceFiles) {
-
-            // Get every method in this file from Mahala's MethodRepo.
-            List<Method> methods = methodRepo.findBySourceFileId(file.getId());
-
-            for (Method method : methods) {
-
-                // Skip test methods — we only refactor production code.
-                if (method.getMethodName().toLowerCase().startsWith("test")) {
-                    continue;
-                }
-
-                // Apply heuristics to decide if this method smells.
-                // If it does, send it to the AI and save the result.
-                if (hasCodeSmell(method)) {
+        List<CompletableFuture<ToolResult>> futures = targets.stream()
+                .map(method -> CompletableFuture.supplyAsync(() -> {
                     try {
-                        ToolResult result = detectSmells(method.getRawCode(), method, analysisRunId);
-                        allResults.add(result);
+                        return detectSmells(method.getRawCode(), method, analysisRunId);
                     } catch (Exception e) {
-                        // Skip methods where Ollama fails — return the rest
+                        return null;
                     }
-                }
-            }
-        }
+                }, analysisExecutor))
+                .toList();
 
-        return allResults;
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     // =================================================================

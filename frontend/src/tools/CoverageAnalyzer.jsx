@@ -22,23 +22,21 @@ export default function CoverageAnalyzer() {
   const [methodCode, setMethodCode] = useState('');
   const sample = SAMPLES[language];
 
+  // Poll for results every 5s while empty — the analysis run was kicked off
+  // in parallel from the Landing/Dashboard page, so findings stream in as
+  // the backend saves them. Stops polling once any results appear.
   useEffect(() => {
-    if (!repoId) return;
-    fetchLatestResults(repoId, 'COVERAGE')
+    if (!repoId || findings.length > 0) return;
+    const tick = () => fetchLatestResults(repoId, 'COVERAGE')
       .then(results => {
         const mapped = sortFindings(results.map(mapToFinding).filter(Boolean));
-        if (mapped.length) { setFindings(mapped); return; }
-        const pending = JSON.parse(localStorage.getItem('mindurcode_pendingRun') || '[]');
-        if (pending.includes('COVERAGE')) {
-          const updated = pending.filter(t => t !== 'COVERAGE');
-          updated.length
-            ? localStorage.setItem('mindurcode_pendingRun', JSON.stringify(updated))
-            : localStorage.removeItem('mindurcode_pendingRun');
-          handleRun();
-        }
+        if (mapped.length) setFindings(mapped);
       })
       .catch(() => {});
-  }, [repoId]);
+    tick();
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, [repoId, findings.length]);
 
   async function handleRun() {
     if (!repoId) return;
@@ -87,7 +85,7 @@ export default function CoverageAnalyzer() {
       />
       {error && <div style={{ padding: '4px 12px', fontSize: 12, color: 'red' }}>{error}</div>}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <Sidebar activeIdx={1} />
+        <Sidebar />
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           <CodePane
             title="Method" badge="Coverage map" badgeKind="info"
@@ -104,7 +102,6 @@ export default function CoverageAnalyzer() {
         </div>
       </div>
       <FindingsPanel
-        tabs={[{ label: 'Gaps', count: findings.length }, { label: 'Files' }, { label: 'Report' }]}
         findings={findings}
         onSelect={handleSelect}
         onAction={handleAction}
