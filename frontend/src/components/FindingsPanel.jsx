@@ -183,11 +183,46 @@ function FindingRow({ f, onSelect, onAction, selected }) {
   );
 }
 
-export default function FindingsPanel({ tabs, findings, height = 360, onSelect, onAction, selectedId }) {
+export default function FindingsPanel({ tabs, findings, height: defaultHeight = 360, onSelect, onAction, selectedId }) {
   const { C } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
+  const [panelHeight, setPanelHeight] = useState(defaultHeight);
+  const [dragging, setDragging] = useState(false);
+
+  function startDrag(e) {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = panelHeight;
+    setDragging(true);
+
+    function onMouseMove(ev) {
+      const delta = startY - ev.clientY; // drag up → taller
+      setPanelHeight(Math.max(120, Math.min(700, startHeight + delta)));
+    }
+
+    function onMouseUp() {
+      setDragging(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
   return (
-    <div style={{ height, display: 'flex', flexDirection: 'column', background: C.panel }}>
+    <div style={{ height: panelHeight, display: 'flex', flexDirection: 'column', background: C.panel, userSelect: dragging ? 'none' : 'auto' }}>
+      {/* Drag handle */}
+      <div
+        onMouseDown={startDrag}
+        style={{
+          height: 5, flexShrink: 0, cursor: 'ns-resize',
+          background: dragging ? C.accent : C.border,
+          transition: dragging ? 'none' : 'background 0.15s',
+        }}
+        onMouseEnter={e => { if (!dragging) e.currentTarget.style.background = C.accent; }}
+        onMouseLeave={e => { if (!dragging) e.currentTarget.style.background = C.border; }}
+      />
       <div style={{ display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: `1px solid ${C.border}`, background: C.panel }}>
         {tabs.map((t, i) => (
           <Tab key={i} label={t.label} count={t.count} active={i === activeTab} onClick={() => setActiveTab(i)} />
