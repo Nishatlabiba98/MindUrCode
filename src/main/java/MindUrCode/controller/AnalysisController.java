@@ -144,4 +144,16 @@ public class AnalysisController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // Sets a previously-approved or previously-rejected result back to PENDING.
+    // Powers the "Undo" button on findings in the Approved / Rejected tabs.
+    @PatchMapping("/results/{id}/pending")
+    public ResponseEntity<ToolResult> undoResult(@PathVariable UUID id) {
+        return toolResultRepo.findById(id)
+                .map(result -> {
+                    result.setStatus(ResultStatus.PENDING);
+                    return ResponseEntity.ok(toolResultRepo.save(result));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import CodePane from '../components/CodePane';
 import FindingsPanel from '../components/FindingsPanel';
 import StatusBar from '../components/StatusBar';
-import { runAnalysis, approveResult, rejectResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
+import { runAnalysis, approveResult, rejectResult, undoResult, mapToFinding, sortFindings, fetchMethod, fetchLatestResults } from '../api';
 import RepoPicker from '../components/RepoPicker';
 import { useTheme } from '../ThemeContext';
 
@@ -93,6 +93,10 @@ export default function ClarityScanner() {
     } else if (action === 'Reject') {
       if (finding.id.startsWith('snippet')) return;
       const updated = await rejectResult(finding.id);
+      setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
+    } else if (action === 'Undo') {
+      if (finding.id.startsWith('snippet')) return;
+      const updated = await undoResult(finding.id);
       setFindings(f => f.map(x => x.id === updated.id ? mapToFinding(updated) : x));
     }
   }

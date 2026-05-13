@@ -46,6 +46,14 @@ export async function rejectResult(id) {
   return res.json();
 }
 
+// Reverts an approved or rejected result back to PENDING — powers the
+// "Undo" button on findings in the Approved / Rejected tabs.
+export async function undoResult(id) {
+  const res = await fetch(`${BASE}/analysis/results/${id}/pending`, { method: 'PATCH' });
+  if (!res.ok) throw new Error(`Undo failed: ${res.status}`);
+  return res.json();
+}
+
 export async function deleteRepo(repoId) {
   const res = await fetch(`${BASE}/repositories/${repoId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
@@ -116,7 +124,10 @@ export function mapToFinding(result) {
     desc: explanation,   // plain-English explanation — shown in collapsible drawer
     code: code,          // code block — shown in the AI Suggestion pane
     loc: `Method: ${result.methodId}`,
-    actions: result.status === 'PENDING' ? ['Approve', 'Edit', 'Reject'] : [],
+    // PENDING: full action set. APPROVED / REJECTED: just Undo (revert to PENDING).
+    actions: result.status === 'PENDING'
+      ? ['Approve', 'Edit', 'Reject']
+      : ['Undo'],
     _raw: result,
   };
 }

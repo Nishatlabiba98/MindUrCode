@@ -143,21 +143,64 @@ function FindingRow({ f, onSelect, onAction, selected }) {
           <>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
               <span style={{ padding: '2px 9px', borderRadius: 999, fontSize: 11, background: tag.bg, color: tag.text, border: `1px solid ${tag.border}`, fontWeight: 500 }}>{f.tag}</span>
-              {f.actions && f.actions.map((a, i) => (
-                <span key={i}
-                  onClick={e => {
-                    e.stopPropagation();
-                    if (a === 'Edit') { setEditing(true); }
-                    else { onAction && onAction(a, f); }
-                  }}
-                  style={{ padding: '2px 9px', borderRadius: 6, fontSize: 11, background: C.panel, color: C.text, border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer' }}>
-                  {a}
-                </span>
-              ))}
+              {f.actions && f.actions.map((a, i) => {
+                // Color-coded hover by action — green for Approve, red for Reject,
+                // accent for Edit, warn-orange for Undo (matches the "this changes
+                // state back" feel). Makes each button readable on stage at a glance.
+                const hoverFor = {
+                  Approve: { bg: C.goodSoft,   fg: C.good,    bd: C.good },
+                  Reject:  { bg: 'oklch(95% 0.04 25)', fg: C.sevRed, bd: C.sevRed },
+                  Edit:    { bg: C.accentSoft, fg: C.accent,  bd: C.accent },
+                  Undo:    { bg: C.warnSoft,   fg: C.warn,    bd: C.warn },
+                }[a] || { bg: C.panelAlt, fg: C.text, bd: C.borderStrong };
+                return (
+                  <span key={i}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (a === 'Edit') { setEditing(true); }
+                      else { onAction && onAction(a, f); }
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = hoverFor.bg;
+                      e.currentTarget.style.color = hoverFor.fg;
+                      e.currentTarget.style.borderColor = hoverFor.bd;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = C.panel;
+                      e.currentTarget.style.color = C.text;
+                      e.currentTarget.style.borderColor = C.border;
+                    }}
+                    style={{
+                      padding: '2px 9px', borderRadius: 6, fontSize: 11,
+                      background: C.panel, color: C.text,
+                      border: `1px solid ${C.border}`, fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                    }}>
+                    {a}
+                  </span>
+                );
+              })}
               {editedDesc ? (
                 <span
                   onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                  style={{ padding: '2px 9px', borderRadius: 6, fontSize: 11, background: C.panel, color: C.textDim, border: `1px solid ${C.border}`, fontWeight: 500, cursor: 'pointer' }}>
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = C.accentSoft;
+                    e.currentTarget.style.color = C.accent;
+                    e.currentTarget.style.borderColor = C.accent;
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = C.panel;
+                    e.currentTarget.style.color = C.textDim;
+                    e.currentTarget.style.borderColor = C.border;
+                  }}
+                  style={{
+                    padding: '2px 9px', borderRadius: 6, fontSize: 11,
+                    background: C.panel, color: C.textDim,
+                    border: `1px solid ${C.border}`, fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                  }}>
                   {expanded ? '▲ Hide explanation' : '▼ Explanation'}
                 </span>
               ) : null}
