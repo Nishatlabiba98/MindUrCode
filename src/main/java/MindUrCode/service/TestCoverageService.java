@@ -87,8 +87,8 @@ public class TestCoverageService {
     return String.format(
             "You are a Java testing expert reviewing code.\n\n" +
             "On the very first line of your response, write exactly one severity rating based on the risk of having no test coverage for this method:\n" +
-            "SEVERITY: CLEAR — simple method with obvious behavior that is low risk to leave untested\n" +
-            "SEVERITY: CONSEQUENTIAL — method with branching logic or side effects that should have tests\n" +
+            "SEVERITY: CLEAR — simple method with obvious behavior that has test coverage\n" +
+            "SEVERITY: CONSEQUENTIAL — method without tests but tests are simple\n" +
             "SEVERITY: IMPORTANT — critical method where missing tests is a significant risk to correctness\n\n" +
             "The following Java method has no unit test coverage:\n\n" +
             "Method name: %s\n" +
