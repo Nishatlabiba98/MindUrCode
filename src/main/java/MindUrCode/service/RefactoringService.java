@@ -250,8 +250,8 @@ public class RefactoringService {
         return String.format(
             "You are a Java refactoring expert reviewing code.\n\n" +
             "On the very first line of your response, write exactly one severity rating based on how much this issue affects the code:\n" +
-            "SEVERITY: CLEAR — minor smell, low impact on functionality or maintainability\n" +
-            "SEVERITY: CONSEQUENTIAL — smell that meaningfully affects readability, testability, or correctness\n" +
+            "SEVERITY: CLEAR — no smell detected\n" +
+            "SEVERITY: CONSEQUENTIAL — minor smell that affects readability, testability, or correctness\n" +
             "SEVERITY: IMPORTANT — serious smell that is very likely to cause bugs or make the code hard to maintain\n\n" +
             "Then analyze the following Java method for code smells:\n\n" +
             "%s\n\n" +

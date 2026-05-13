@@ -69,7 +69,7 @@ public class ClarityService {
                 You are a Java code clarity expert reviewing code.
 
                 On the very first line of your response, write exactly one severity rating based on how much the naming or clarity issue affects the code:
-                SEVERITY: CLEAR — name is slightly off but intent is still understandable
+                SEVERITY: CLEAR — name is clear and understandble, no risk of confusion for developers reading this code
                 SEVERITY: CONSEQUENTIAL — misleading name that will slow down developers reading this code
                 SEVERITY: IMPORTANT — name actively contradicts what the method does, creating real risk of misuse
 
