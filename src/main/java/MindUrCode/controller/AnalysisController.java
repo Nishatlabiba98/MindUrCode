@@ -21,7 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -101,18 +103,20 @@ public class AnalysisController {
             @RequestParam UUID repoId,
             @RequestParam ToolType toolType) {
 
-        List<SourceFile> files = sourceFileRepo.findByRepositoryId(repoId);
+        // 1 query: every method ID in this repo (joins methods → source_files).
+        List<UUID> methodIds = methodRepo.findIdsByRepositoryId(repoId);
+        if (methodIds.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
 
-        List<UUID> methodIds = files.stream()
-                .flatMap(sf -> methodRepo.findBySourceFileId(sf.getId()).stream())
-                .map(Method::getId)
-                .collect(Collectors.toList());
+        // 1 query: every ToolResult for those methods + this tool, ordered
+        // newest-first. We then keep the first result per method ID.
+        List<ToolResult> all = toolResultRepo
+                .findByMethodIdInAndToolTypeOrderByCreatedAtDesc(methodIds, toolType);
 
-        List<ToolResult> latest = methodIds.stream()
-                .flatMap(mid -> toolResultRepo.findByMethodId(mid).stream()
-                        .filter(r -> r.getToolType() == toolType)
-                        .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                        .limit(1))
+        Set<UUID> seen = new HashSet<>();
+        List<ToolResult> latest = all.stream()
+                .filter(r -> seen.add(r.getMethodId()))  // dedupe by method, keep newest
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(latest);
