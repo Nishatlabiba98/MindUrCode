@@ -216,23 +216,41 @@ public class SimplificationService {
         String body = method.getRawCode();
         if (body == null || body.isBlank()) return false;
 
-        // CHECK 1 — Nested conditionals (more than 2 "if" blocks)
+        // CHECK 1 — Long methods are almost always simplifiable. 15 lines is the
+        // same threshold the Refactoring tool uses. Catches things like a
+        // 100-line main() that should be broken up.
+        int lineCount = body.split("\\n", -1).length;
+        if (lineCount > 15) return true;
+
+        // CHECK 2 — Nested conditionals (more than 2 "if" blocks)
         // split("if", -1).length - 1 counts how many times "if" appears.
         int ifCount = body.split("if", -1).length - 1;
         if (ifCount > 2) return true;
 
-        // CHECK 2 — Index-based for loop where the index is not used in the body
-        // contains() returns true if the substring is found anywhere in the String.
+        // CHECK 3 — Switch statements with multiple cases. Long switch blocks
+        // with case-specific logic are a classic simplification target (extract
+        // methods, use a strategy map, etc.).
+        int caseCount = body.split("\\bcase\\s", -1).length - 1;
+        if (caseCount >= 3) return true;
+
+        // CHECK 4 — Nested error handling. A try inside a switch case (or two
+        // try blocks in one method) is hard to read and almost always needs
+        // extracting into helper methods.
+        int tryCount = body.split("\\btry\\b", -1).length - 1;
+        if (tryCount >= 2) return true;
+        if (tryCount >= 1 && (body.contains("switch") || body.contains("while"))) return true;
+
+        // CHECK 5 — Index-based for loop where the index is not used in the body
         boolean hasIndexLoop = body.contains("for (int i = 0")
                 || body.contains("for(int i = 0");
         boolean indexUsedInBody = body.contains(".get(i)");
         if (hasIndexLoop && !indexUsedInBody) return true;
 
-        // CHECK 3 — Manual null check instead of Objects.nonNull
+        // CHECK 6 — Manual null check instead of Objects.nonNull
         boolean hasManualNullCheck = body.contains("!= null");
         if (hasManualNullCheck) return true;
 
-        // CHECK 4 — Intermediate list variable that is only used to return
+        // CHECK 7 — Intermediate list variable that is only used to return
         boolean hasIntermediateList = body.contains("new ArrayList")
                 && body.contains("return");
         if (hasIntermediateList) return true;
