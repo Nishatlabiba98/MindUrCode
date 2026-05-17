@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { submitRepo, getReposByUser, deleteRepo, runAnalysis } from '../api';
 import { useTheme } from '../ThemeContext';
-import {
-  DashboardIcon, CoverageIcon, ClarityIcon, DocsIcon, RefactorIcon, SimplifyIcon,
-  BackIcon, SunIcon, MoonIcon,
-} from '../components/icons';
+import { submitRepo, getReposByUser, deleteRepo } from '../api';
 import './Dashboard.css';
 
 const TOOLS = [
@@ -32,9 +28,24 @@ const ArrowIcon = () => (
   </svg>
 );
 
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/>
+    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M13.5 10A6 6 0 016 2.5a6 6 0 100 11A6 6 0 0013.5 10z"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { isDark, toggle: toggleTheme } = useTheme();
+  const { isDark, toggle } = useTheme();
   const [selected, setSelected]     = useState(() => new Set(['coverage']));
   const [repo,     setRepo]         = useState('');
   const [name,     setName]         = useState('');
@@ -72,7 +83,7 @@ export default function Dashboard() {
     } catch { /* silently ignore */ }
   }
 
-  function toggle(id) {
+  function toggle_tool(id) {
     setSelected(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -93,14 +104,8 @@ export default function Dashboard() {
       localStorage.setItem('mindurcode_userId', userId.trim());
       loadUserRepos(userId.trim());
 
-      // Fire every selected tool's /api/analysis/run in parallel — do NOT await.
-      // The backend (with its 16-thread analysisExecutor + Ollama NUM_PARALLEL=4)
-      // chews through them concurrently while we navigate the user to the first
-      // tool's page, where the 5-second poll picks up findings as they're saved.
-      const toolTypes = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
-      toolTypes.forEach(t =>
-        runAnalysis(repoId, t).catch(err => console.warn(`${t} run failed:`, err))
-      );
+      const pending = [...selected].map(id => TOOL_TYPE_MAP[id]).filter(Boolean);
+      localStorage.setItem('mindurcode_pendingRun', JSON.stringify(pending));
 
       const first = TOOLS.find(t => selected.has(t.id));
       navigate(first?.route || '/coverage');
@@ -130,38 +135,52 @@ export default function Dashboard() {
 
         {/* ── Body ── */}
         <div className="dash__body">
-          {/* Sidebar — uses the same canonical icon set as the tool-page Sidebar
-              (see components/icons.jsx). One icon per concept, no overlap. */}
+          {/* Sidebar */}
           <aside className="dash__sidebar">
             <button className="icn active" title="Dashboard" type="button">
-              <DashboardIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
+              </svg>
             </button>
             <button className="icn" title="Coverage" type="button" onClick={() => navigate('/coverage')}>
-              <CoverageIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 4h10M3 8h7M3 12h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
             </button>
             <button className="icn" title="Clarity" type="button" onClick={() => navigate('/clarity')}>
-              <ClarityIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="7" cy="7" r="4" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M10 10l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
             </button>
             <button className="icn" title="Docs" type="button" onClick={() => navigate('/docs')}>
-              <DocsIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
             </button>
             <button className="icn" title="Refactor" type="button" onClick={() => navigate('/refactor')}>
-              <RefactorIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h9M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
             <button className="icn" title="Simplify" type="button" onClick={() => navigate('/simplify')}>
-              <SimplifyIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 4h10M3 8h7M3 12h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
             </button>
             <div className="sep" />
             <button className="icn" title="Back to start" type="button" onClick={() => navigate('/')}>
-              <BackIcon />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
-            <div className="dash__sidebar-spacer" />
             <button
-              className="icn theme-toggle"
-              type="button"
-              onClick={toggleTheme}
+              className="icn"
+              onClick={toggle}
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              aria-label="Toggle theme"
             >
               {isDark ? <SunIcon /> : <MoonIcon />}
             </button>
@@ -258,12 +277,12 @@ export default function Dashboard() {
                     className={`dash__tool ${t.id} ${isSelected ? 'selected' : ''}`}
                     onClick={e => {
                       if (e.target.closest('.open')) { navigate(t.route); return; }
-                      toggle(t.id);
+                      toggle_tool(t.id);
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={e => {
-                      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(t.id); }
+                      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle_tool(t.id); }
                     }}
                   >
                     <span className="check" aria-hidden="true"><CheckIcon /></span>
